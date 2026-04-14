@@ -16,8 +16,8 @@ export async function loginWithPassword(email: string, password: string): Promis
   }
 
   const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, full_name, role")
+    .from("user")
+    .select("id, full_name, role, player_id, is_active_player")
     .eq("id", userId)
     .single();
 
@@ -25,7 +25,13 @@ export async function loginWithPassword(email: string, password: string): Promis
     throw new AuthError("Failed to load user profile.");
   }
 
-  return profile as UserProfile;
+  const resolvedProfile = profile as UserProfile;
+
+  if (resolvedProfile.role === "player" && !resolvedProfile.is_active_player) {
+    throw new AuthError("This player account is currently inactive.");
+  }
+
+  return resolvedProfile;
 }
 
 export async function logout(): Promise<void> {
@@ -34,4 +40,27 @@ export async function logout(): Promise<void> {
   if (error) {
     throw new AuthError("Failed to logout.");
   }
+}
+
+export async function getCurrentUserProfile(): Promise<UserProfile | null> {
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("user")
+    .select("id, full_name, role, player_id, is_active_player")
+    .eq("id", user.id)
+    .single();
+
+  if (error) {
+    throw new AuthError("Failed to load current user profile.");
+  }
+
+  return data as UserProfile;
 }

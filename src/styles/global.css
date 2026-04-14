@@ -1,8 +1,8 @@
 :root {
   font-family: Inter, Arial, sans-serif;
   line-height: 1.5;
-  color: #1f2937;
-  background: #f3f4f6;
+  color: #041015;
+  background: #f2fbff;
 }
 
 * {
@@ -11,6 +11,9 @@
 
 body {
   margin: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 194, 250, 0.14), rgba(4, 194, 250, 0) 42%),
+    #f2fbff;
 }
 
 .page-shell {
@@ -28,6 +31,110 @@ body {
   background: #ffffff;
   padding: 24px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+}
+
+.card-wide {
+  max-width: 920px;
+}
+
+.app-shell {
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  background: #041015;
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 10px 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #04c2fa;
+  color: #041015;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.brand-name {
+  margin: 0;
+  font-weight: 700;
+}
+
+.brand-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.menu {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.menu-item {
+  border: 1px solid rgba(4, 194, 250, 0.4);
+  background: transparent;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.menu-item-active {
+  background: #04c2fa;
+  color: #041015;
+  border-color: #04c2fa;
+  font-weight: 700;
+}
+
+.profile {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #04c2fa;
+  color: #041015;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.content-card {
+  margin-top: 14px;
+  width: 100%;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(4, 92, 124, 0.16);
+  padding: 18px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.08);
 }
 
 .title {
@@ -53,18 +160,24 @@ body {
   font-size: 0.9rem;
 }
 
+.helper-text {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
 .input {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 1rem;
+  width: 100%;
 }
 
 .button {
   border: none;
   border-radius: 8px;
   padding: 12px;
-  background: #111827;
+  background: #045c7c;
   color: #ffffff;
   cursor: pointer;
   font-weight: 600;
@@ -76,10 +189,118 @@ body {
 }
 
 .button-secondary {
-  background: #374151;
+  background: #041015;
+}
+
+.button-logout-top {
+  padding: 8px 12px;
+  background: #045c7c;
+  white-space: nowrap;
 }
 
 .message-error {
   color: #dc2626;
   margin-top: 12px;
+}
+
+.tab-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.section {
+  margin-bottom: 20px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.section-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.list {
+  margin: 0 0 12px;
+  padding-left: 18px;
+}
+
+.inline-actions {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 12px;
+}
+
+.table th,
+.table td {
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+  text-align: left;
+}
+
+@media (max-width: 1024px) {
+  .topbar {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .profile {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 8px;
+  }
+
+  .content-card {
+    padding: 14px 12px;
+    border-radius: 18px;
+    box-shadow: 0 10px 22px rgba(4, 16, 21, 0.12);
+  }
+
+  .topbar {
+    position: sticky;
+    top: 8px;
+    z-index: 20;
+    border-radius: 16px;
+    padding: 10px 12px;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .menu {
+    justify-content: space-between;
+    background: rgba(4, 194, 250, 0.08);
+    border-radius: 12px;
+    padding: 4px;
+  }
+
+  .menu-item {
+    flex: 1;
+    min-width: 88px;
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+
+  .profile {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .table th,
+  .table td {
+    padding: 7px 6px;
+    font-size: 0.88rem;
+  }
 }

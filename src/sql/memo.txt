@@ -1,0 +1,48 @@
+Supabase update memo (soccer schedule app)
+
+1) Rename table
+- Rename `public.profiles` to `public."user"` if your project already has data:
+  alter table public.profiles rename to "user";
+
+2) Add columns to `public."user"`
+- Add unique player identifier and active-team flag:
+  alter table public."user"
+    add column if not exists player_id text,
+    add column if not exists is_active_player boolean not null default true;
+  alter table public."user"
+    add constraint user_player_id_key unique (player_id);
+
+3) Keep existing auth linkage
+- Ensure `id` still references `auth.users(id)` with cascade delete.
+
+4) Add new tables
+- `public.schedule` for monthly schedule management (CRUD from admin screen).
+- `public.attendance` for daily attendance records and per-day totals.
+- `public.location_master` as location/facility master table for schedule linkage.
+
+5) Recheck RLS and policies
+- Re-enable RLS after migration:
+  alter table public."user" enable row level security;
+  alter table public.location_master enable row level security;
+  alter table public.schedule enable row level security;
+  alter table public.attendance enable row level security;
+- Existing profile policy must be re-targeted from `public.profiles` to `public."user"`.
+- Add admin policies so frontend admin screens can read/write:
+  - authenticated users can read users
+  - admin can manage location/schedule/attendance
+  - authenticated users can read locations/schedules
+  - players can read only their own attendance
+  - for schedule insert, enforce `created_by = auth.uid()` to satisfy RLS checks
+
+6) Backfill / sync existing data
+- Populate `player_id` for current players (must be unique).
+- Set `is_active_player = false` for players no longer in the team.
+
+7) App query impacts
+- Update all references from `public.profiles` to `public."user"`.
+- Update seed scripts to insert into `user`, `location_master`, `schedule`, and `attendance`.
+
+8) Seed user scope (current requirement)
+- Keep only existing users in sample data:
+  - Admin User
+  - Koko
