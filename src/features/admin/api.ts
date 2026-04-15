@@ -15,12 +15,20 @@ export interface LocationMaster {
   is_active: boolean;
 }
 
+export interface CategoryMaster {
+  id: number;
+  category_code: "practice" | "match" | "event";
+  category_name: string;
+  is_active: boolean;
+  display_order: number;
+}
+
 export interface ScheduleItem {
   id: number;
   schedule_date: string;
   start_time: string | null;
   end_time: string | null;
-  title: string;
+  category_id: number;
   location_id: number | null;
   description: string | null;
 }
@@ -59,10 +67,20 @@ export async function fetchLocations(): Promise<LocationMaster[]> {
   return (data ?? []) as LocationMaster[];
 }
 
+export async function fetchCategories(): Promise<CategoryMaster[]> {
+  const { data, error } = await supabase
+    .from("category_master")
+    .select("id, category_code, category_name, is_active, display_order")
+    .order("display_order", { ascending: true })
+    .order("id", { ascending: true });
+  throwOnError(error, "Failed to load categories");
+  return (data ?? []) as CategoryMaster[];
+}
+
 export async function fetchSchedules(): Promise<ScheduleItem[]> {
   const { data, error } = await supabase
     .from("schedule")
-    .select("id, schedule_date, start_time, end_time, title, location_id, description")
+    .select("id, schedule_date, start_time, end_time, category_id, location_id, description")
     .order("schedule_date", { ascending: true })
     .order("start_time", { ascending: true });
   throwOnError(error, "Failed to load schedules");
@@ -83,7 +101,7 @@ export async function upsertSchedule(input: {
   schedule_date: string;
   start_time: string;
   end_time: string;
-  title: string;
+  category_id: number;
   location_id: number | null;
   description: string;
   created_by: string;
@@ -93,7 +111,7 @@ export async function upsertSchedule(input: {
     schedule_date: input.schedule_date,
     start_time: input.start_time || null,
     end_time: input.end_time || null,
-    title: input.title,
+    category_id: input.category_id,
     location_id: input.location_id,
     description: input.description || null,
     created_by: input.created_by,
