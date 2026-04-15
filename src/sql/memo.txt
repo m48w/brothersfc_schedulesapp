@@ -3,11 +3,25 @@ Supabase update memo (soccer schedule app)
 This app now uses a category master for schedule classification.
 Please apply the SQL updates in `src/sql/table/table.sql` or run the migration steps below in Supabase SQL Editor.
 
+This app also now requires `public.player_profile` for the player portal.
+
 1) Add classification master table
 - Create `public.category_master` for schedule categories:
   - `practice` = 練習
   - `match` = 試合
   - `event` = イベント
+
+1-2) Add player profile table
+- Create `public.player_profile` with:
+  - `photo_url`
+  - `jersey_name`
+  - `back_number`
+  - `jersey_size`
+  - `birth_date`
+  - `nationality`
+  - `position`
+  - `current_status`
+  - `remark`
 
 2) Migrate `public.schedule`
 - Replace the old `title` column with `category_id`.
@@ -58,10 +72,14 @@ Please apply the SQL updates in `src/sql/table/table.sql` or run the migration s
 - Enable RLS for the new table:
   ```sql
   alter table public.category_master enable row level security;
+  alter table public.player_profile enable row level security;
   ```
 - Add policies:
   - authenticated users can read category master
   - admin can manage category master
+  - users can read/update their own player profile
+  - authenticated users can read attendance for participant lists
+  - users can insert/update their own attendance
 
 4) Seed / master data
 - Make sure these three master rows exist:
@@ -79,5 +97,7 @@ Please apply the SQL updates in `src/sql/table/table.sql` or run the migration s
 6) Recommended verification in Supabase
 - Confirm `category_master` has 3 rows.
 - Confirm `schedule.category_id` is filled for all existing records.
+- Confirm `player_profile` exists and at least current players can save their own row.
 - Confirm admin users can insert/update/delete schedules after the migration.
 - Confirm players/admins can still read schedules and attendance with current RLS.
+- Confirm a player can change attendance for their own schedule row.

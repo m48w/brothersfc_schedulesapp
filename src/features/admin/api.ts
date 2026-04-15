@@ -12,6 +12,7 @@ export interface AppUser {
 export interface LocationMaster {
   id: number;
   facility_name: string;
+  map_url?: string | null;
   is_active: boolean;
 }
 
@@ -61,7 +62,7 @@ export async function fetchUsers(): Promise<AppUser[]> {
 export async function fetchLocations(): Promise<LocationMaster[]> {
   const { data, error } = await supabase
     .from("location_master")
-    .select("id, facility_name, is_active")
+    .select("id, facility_name, map_url, is_active")
     .order("facility_name", { ascending: true });
   throwOnError(error, "Failed to load locations");
   return (data ?? []) as LocationMaster[];

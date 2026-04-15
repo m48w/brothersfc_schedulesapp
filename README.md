@@ -22,6 +22,11 @@ This project provides a clean, maintainable foundation for role-based access in 
   - Dashboard: sporty realtime clock UI, next practice/match countdown, next event card, monthly player attendance rate
   - Schedule: compact create form with category master (`練習 / 試合 / イベント`) and monthly list
   - Attendance: monthly day-by-day player list with per-day participant totals and inline attendance saving
+- Player portal tabs:
+  - Dashboard: next event, next practice/match, live countdowns, participant counts, participant lists, monthly participant overview
+  - Schedule: monthly day-by-day schedule list with attendance posting
+  - Profile: editable player profile card backed by `player_profile`
+  - Settings: language saved in `localStorage` and password update
 - Global Settings page for user preferences.
 - Internationalization (i18n) support (English & Japanese) via `react-i18next`.
 - Feature-oriented folder structure for scalability.
@@ -115,6 +120,9 @@ Current schema includes:
   - `practice` / `練習`
   - `match` / `試合`
   - `event` / `イベント`
+- `public.player_profile` for player-facing profile data
+  - `photo_url`, `jersey_name`, `back_number`, `jersey_size`
+  - `birth_date`, `nationality`, `position`, `current_status`, `remark`
 - `public.schedule` with `category_id`
 - `public.attendance` for per-schedule player attendance
 
@@ -154,6 +162,11 @@ values
 Optional sample SQL is available in [src/sql/sample/sample.sql](/E:/My%20Execrise%20Project/brothersfc_schedulesapp/src/sql/sample/sample.sql:1).
 
 If you are upgrading an existing Supabase project from the old `schedule.title` structure, check [src/sql/memo.txt](/E:/My%20Execrise%20Project/brothersfc_schedulesapp/src/sql/memo.txt:1) for the migration steps and required manual checks.
+
+The player portal also depends on:
+
+- `player_profile` RLS policies that let players read and update their own profile
+- attendance RLS policies that let authenticated users read participant lists and let players update only their own attendance
 
 ## Run Locally
 

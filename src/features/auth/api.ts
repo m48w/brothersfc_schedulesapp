@@ -64,3 +64,34 @@ export async function getCurrentUserProfile(): Promise<UserProfile | null> {
 
   return data as UserProfile;
 }
+
+export async function updatePasswordWithCurrentPassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const {
+    data: { user },
+    error: authError
+  } = await supabase.auth.getUser();
+
+  if (authError || !user?.email) {
+    throw new AuthError("Failed to resolve current user.");
+  }
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword
+  });
+
+  if (signInError) {
+    throw new AuthError("Current password is incorrect.");
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+
+  if (updateError) {
+    throw new AuthError("Failed to update password.");
+  }
+}

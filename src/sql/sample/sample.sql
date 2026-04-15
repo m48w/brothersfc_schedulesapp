@@ -36,6 +36,43 @@ set category_code = excluded.category_code,
     is_active = excluded.is_active,
     updated_at = now();
 
+insert into public.player_profile (
+  user_id,
+  photo_url,
+  jersey_name,
+  back_number,
+  jersey_size,
+  birth_date,
+  nationality,
+  position,
+  current_status,
+  remark
+)
+values
+  (
+    'cec118e7-747f-4537-b6fd-4b04dfba6dba',
+    'https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&w=600&q=80',
+    'KOKO',
+    10,
+    'L',
+    '2000-08-15',
+    'Japan',
+    'MF',
+    true,
+    'Captain candidate'
+  )
+on conflict (user_id) do update
+set photo_url = excluded.photo_url,
+    jersey_name = excluded.jersey_name,
+    back_number = excluded.back_number,
+    jersey_size = excluded.jersey_size,
+    birth_date = excluded.birth_date,
+    nationality = excluded.nationality,
+    position = excluded.position,
+    current_status = excluded.current_status,
+    remark = excluded.remark,
+    updated_at = now();
+
 insert into public.schedule (id, schedule_date, start_time, end_time, category_id, location_id, description, created_by)
 values
   (1, '2026-04-16', '19:00', '21:00', 1, 1, 'Conditioning and tactical drills', 'f2e4d955-5f9d-4f10-970b-e55ad99e18fd'),
