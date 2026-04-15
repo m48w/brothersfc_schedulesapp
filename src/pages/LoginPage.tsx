@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { loginWithPassword } from "../features/auth/api";
 import { LoginForm } from "../features/auth/components/LoginForm";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleLogin = async (email: string, password: string) => {
     const profile = await loginWithPassword(email, password);
@@ -19,8 +21,8 @@ export function LoginPage() {
   return (
     <main className="page-shell">
       <section className="card">
-        <h1 className="title">Brothers FC Login</h1>
-        <p className="subtitle">Sign in with your registered account.</p>
+        <h1 className="title">Brothers FC {t("login")}</h1>
+        <p className="subtitle">{t("signInMessage")}</p>
         <LoginForm onSubmit={handleLogin} />
       </section>
     </main>

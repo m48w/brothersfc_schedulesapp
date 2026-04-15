@@ -22,6 +22,8 @@ This project provides a clean, maintainable foundation for role-based access in 
   - Dashboard: attendance by date/month and per-player attendance rate
   - Schedule: monthly list with create/update/delete
   - Attendance: daily attendance table and total player count
+- Global Settings page for user preferences.
+- Internationalization (i18n) support (English & Japanese) via `react-i18next`.
 - Feature-oriented folder structure for scalability.
 
 ## Tech Stack
@@ -31,6 +33,7 @@ This project provides a clean, maintainable foundation for role-based access in 
 - React Router v7
 - Supabase (`@supabase/supabase-js`)
 - Vite
+- i18next & react-i18next (Internationalization)
 
 ## Project Structure
 
@@ -43,11 +46,13 @@ This project provides a clean, maintainable foundation for role-based access in 
 |   |       `-- components
 |   |           `-- LoginForm.tsx
 |   |-- lib
+|   |   |-- i18n.ts
 |   |   `-- supabase.ts
 |   |-- pages
 |   |   |-- AdminDashboardPage.tsx
 |   |   |-- LoginPage.tsx
-|   |   `-- PlayerWelcomePage.tsx
+|   |   |-- PlayerWelcomePage.tsx
+|   |   `-- SettingsPage.tsx
 |   |-- router
 |   |   `-- index.tsx
 |   |-- styles

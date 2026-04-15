@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getCurrentUserProfile, logout } from "../features/auth/api";
 
 interface PlayerLocationState {
@@ -13,6 +14,7 @@ export function PlayerWelcomePage() {
   const [playerName, setPlayerName] = useState(state?.playerName ?? "");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(!state?.playerName);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const resolveProfile = async () => {
@@ -39,7 +41,7 @@ export function PlayerWelcomePage() {
     return (
       <main className="page-shell">
         <section className="card">
-          <p>Loading player profile...</p>
+          <p>{t("loading")}</p>
         </section>
       </main>
     );
@@ -62,11 +64,16 @@ export function PlayerWelcomePage() {
   return (
     <main className="page-shell">
       <section className="card">
-        <h1 className="title">(Brothers FC) Welcome, {playerName}</h1>
-        <p className="subtitle">Player access granted.</p>
-        <button className="button button-secondary" onClick={handleLogout} disabled={isLoggingOut}>
-          {isLoggingOut ? "Logging out..." : "Logout"}
-        </button>
+        <h1 className="title">(Brothers FC) {t("welcome")}, {playerName}</h1>
+        <p className="subtitle">{t("playerAccessGranted")}</p>
+        <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
+          <button className="button button-secondary" onClick={handleLogout} disabled={isLoggingOut}>
+            {isLoggingOut ? t("loggingOut") : t("logout")}
+          </button>
+          <Link to="/settings" className="button button-secondary">
+            {t("settings")}
+          </Link>
+        </div>
       </section>
     </main>
   );

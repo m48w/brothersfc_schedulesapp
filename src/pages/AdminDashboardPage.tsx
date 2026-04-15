@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   AppUser,
   AttendanceItem,
@@ -39,6 +40,7 @@ const EMPTY_FORM: ScheduleForm = {
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -77,14 +79,14 @@ export function AdminDashboardPage() {
     if (usersResult.status === "fulfilled") {
       setUsers(usersResult.value);
     } else {
-      errors.push(usersResult.reason instanceof Error ? usersResult.reason.message : "Failed to load users");
+      errors.push(usersResult.reason instanceof Error ? usersResult.reason.message : t("errorLoadUsers"));
     }
 
     if (locationsResult.status === "fulfilled") {
       setLocations(locationsResult.value);
     } else {
       errors.push(
-        locationsResult.reason instanceof Error ? locationsResult.reason.message : "Failed to load locations"
+        locationsResult.reason instanceof Error ? locationsResult.reason.message : t("errorLoadLocations")
       );
     }
 
@@ -95,7 +97,7 @@ export function AdminDashboardPage() {
       }
     } else {
       errors.push(
-        schedulesResult.reason instanceof Error ? schedulesResult.reason.message : "Failed to load schedules"
+        schedulesResult.reason instanceof Error ? schedulesResult.reason.message : t("errorLoadSchedules")
       );
     }
 
@@ -103,7 +105,7 @@ export function AdminDashboardPage() {
       setAttendance(attendanceResult.value);
     } else {
       errors.push(
-        attendanceResult.reason instanceof Error ? attendanceResult.reason.message : "Failed to load attendance"
+        attendanceResult.reason instanceof Error ? attendanceResult.reason.message : t("errorLoadAttendance")
       );
     }
 
@@ -189,7 +191,7 @@ export function AdminDashboardPage() {
     const { data } = await supabase.auth.getUser();
     const currentUserId = data.user?.id;
     if (!currentUserId) {
-      setPageMessage("No authenticated admin user found.");
+      setPageMessage(t("errorNoAuthAdmin"));
       return;
     }
 
@@ -207,7 +209,7 @@ export function AdminDashboardPage() {
       setScheduleForm(EMPTY_FORM);
       await loadData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save schedule.";
+      const message = error instanceof Error ? error.message : t("errorSaveSchedule");
       setPageMessage(message);
     }
   };
@@ -231,7 +233,7 @@ export function AdminDashboardPage() {
       await deleteSchedule(id);
       await loadData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to delete schedule.";
+      const message = error instanceof Error ? error.message : t("errorDeleteSchedule");
       setPageMessage(message);
     }
   };
@@ -246,7 +248,7 @@ export function AdminDashboardPage() {
 
   const handleSaveAttendance = async () => {
     if (!selectedAttendanceDate || !firstScheduleForDate) {
-      setPageMessage("Select a date that has at least one schedule.");
+      setPageMessage(t("errorSelectDateWithSchedule"));
       return;
     }
     setPageMessage("");
@@ -265,7 +267,7 @@ export function AdminDashboardPage() {
       setEditingAttendance({});
       await loadData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save attendance.";
+      const message = error instanceof Error ? error.message : t("errorSaveAttendance");
       setPageMessage(message);
     }
   };
@@ -277,52 +279,55 @@ export function AdminDashboardPage() {
           <div className="brand-logo">FC</div>
           <div>
             <p className="brand-name">Brothers FC</p>
-            <p className="brand-sub">Soccer Schedule Management</p>
+            <p className="brand-sub">{t("brandSub")}</p>
           </div>
         </div>
         <nav className="menu">
           <button className={`menu-item ${activeTab === "dashboard" ? "menu-item-active" : ""}`} onClick={() => setActiveTab("dashboard")}>
-            Dashboard
+            {t("dashboard")}
           </button>
           <button className={`menu-item ${activeTab === "schedule" ? "menu-item-active" : ""}`} onClick={() => setActiveTab("schedule")}>
-            Schedule
+            {t("schedule")}
           </button>
           <button className={`menu-item ${activeTab === "attendance" ? "menu-item-active" : ""}`} onClick={() => setActiveTab("attendance")}>
-            Attendance
+            {t("attendance")}
           </button>
         </nav>
         <div className="profile">
           <div className="avatar">{adminName.slice(0, 1).toUpperCase()}</div>
           <span>{adminName}</span>
+          <Link to="/settings" className="button button-secondary button-settings-top">
+            {t("settings")}
+          </Link>
           <button className="button button-logout-top" onClick={handleLogout} disabled={isLoggingOut}>
-            {isLoggingOut ? "Logging out..." : "Logout"}
+            {isLoggingOut ? t("loggingOut") : t("logout")}
           </button>
         </div>
       </header>
 
       <section className="content-card">
-        {loading ? <p>Loading...</p> : null}
+        {loading ? <p>{t("loading")}</p> : null}
         {pageMessage ? <p className="message-error">{pageMessage}</p> : null}
 
         {!loading && activeTab === "dashboard" ? (
           <section className="section">
-            <h2 className="section-title">Attendance by Date</h2>
+            <h2 className="section-title">{t("attendanceByDate")}</h2>
             <ul className="list">
               {Object.entries(schedulesByDate).map(([date, dateSchedules]) => (
                 <li key={date}>
-                  {date} - {dateSchedules.length} schedule(s)
+                  {date} - {t("schedulesCount", { count: dateSchedules.length })}
                 </li>
               ))}
             </ul>
-            <h2 className="section-title">Attendance by Month</h2>
+            <h2 className="section-title">{t("attendanceByMonth")}</h2>
             <ul className="list">
               {Object.entries(monthlyAttendanceCounts).map(([month, count]) => (
                 <li key={month}>
-                  {month} - {count} attendance record(s)
+                  {month} - {t("attendanceRecordsCount", { count })}
                 </li>
               ))}
             </ul>
-            <h2 className="section-title">Player Attendance Rate</h2>
+            <h2 className="section-title">{t("playerAttendanceRate")}</h2>
             <ul className="list">
               {players.map((player) => {
                 const stat = attendanceByPlayer[player.id] ?? { present: 0, total: 0 };
@@ -339,10 +344,10 @@ export function AdminDashboardPage() {
 
         {!loading && activeTab === "schedule" ? (
           <section className="section">
-            <h2 className="section-title">Schedule Maintenance</h2>
+            <h2 className="section-title">{t("scheduleMaintenance")}</h2>
             <form className="form" onSubmit={handleScheduleSubmit}>
               <label className="label">
-                Date
+                {t("date")}
                 <input
                   className="input"
                   type="date"
@@ -352,7 +357,7 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label className="label">
-                Title
+                {t("title")}
                 <input
                   className="input"
                   value={scheduleForm.title}
@@ -361,7 +366,7 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label className="label">
-                Start time
+                {t("startTime")}
                 <input
                   className="input"
                   type="time"
@@ -370,7 +375,7 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label className="label">
-                End time
+                {t("endTime")}
                 <input
                   className="input"
                   type="time"
@@ -379,26 +384,26 @@ export function AdminDashboardPage() {
                 />
               </label>
               <label className="label">
-                Location
+                {t("location")}
                 <select
                   className="input"
                   value={scheduleForm.location_id}
                   onChange={(event) => setScheduleForm((prev) => ({ ...prev, location_id: event.target.value }))}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{t("unassigned")}</option>
                   {locations.map((location) => (
                     <option key={location.id} value={location.id}>
                       {location.facility_name}
-                      {!location.is_active ? " (inactive)" : ""}
+                      {!location.is_active ? ` ${t("inactive")}` : ""}
                     </option>
                   ))}
                 </select>
                 {locations.length === 0 ? (
-                  <span className="helper-text">No location records loaded. Please check location_master data/RLS.</span>
+                  <span className="helper-text">{t("noLocationRecords")}</span>
                 ) : null}
               </label>
               <label className="label">
-                Description
+                {t("description")}
                 <textarea
                   className="input"
                   value={scheduleForm.description}
@@ -406,21 +411,21 @@ export function AdminDashboardPage() {
                 />
               </label>
               <button className="button" type="submit">
-                {scheduleForm.id ? "Update Schedule" : "Create Schedule"}
+                {scheduleForm.id ? t("updateSchedule") : t("createSchedule")}
               </button>
             </form>
-            <h3 className="section-title">Monthly View (list)</h3>
+            <h3 className="section-title">{t("monthlyView")}</h3>
             <ul className="list">
               {schedules.map((item) => (
                 <li key={item.id}>
                   {item.schedule_date} {item.start_time ?? "--:--"} - {item.title} (
-                  {item.location_id ? locationNameById[item.location_id] : "No location"})
+                  {item.location_id ? locationNameById[item.location_id] : t("noLocation")})
                   <div className="inline-actions">
                     <button className="button button-secondary" onClick={() => handleEditSchedule(item)}>
-                      Edit
+                      {t("edit")}
                     </button>
                     <button className="button button-secondary" onClick={() => void handleDeleteSchedule(item.id)}>
-                      Delete
+                      {t("delete")}
                     </button>
                   </div>
                 </li>
@@ -431,9 +436,9 @@ export function AdminDashboardPage() {
 
         {!loading && activeTab === "attendance" ? (
           <section className="section">
-            <h2 className="section-title">Daily Attendance</h2>
+            <h2 className="section-title">{t("dailyAttendance")}</h2>
             <label className="label">
-              Date
+              {t("date")}
               <input
                 className="input"
                 type="date"
@@ -444,8 +449,8 @@ export function AdminDashboardPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Player</th>
-                  <th>Status</th>
+                  <th>{t("player")}</th>
+                  <th>{t("status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -463,24 +468,24 @@ export function AdminDashboardPage() {
                           }))
                         }
                       >
-                        <option value="present">Present</option>
-                        <option value="late">Late</option>
-                        <option value="absent">Absent</option>
+                        <option value="present">{t("present")}</option>
+                        <option value="late">{t("late")}</option>
+                        <option value="absent">{t("absent")}</option>
                       </select>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p>Total players: {attendanceRows.length}</p>
+            <p>{t("totalPlayers")} {attendanceRows.length}</p>
             <button className="button" onClick={() => void handleSaveAttendance()}>
-              Save Daily Attendance
+              {t("saveDailyAttendance")}
             </button>
             {!firstScheduleForDate ? (
-              <p className="subtitle">No schedule found on this date. Save is disabled by validation.</p>
+              <p className="subtitle">{t("noScheduleFound")}</p>
             ) : null}
             {schedulesForDate.length > 1 ? (
-              <p className="subtitle">Multiple schedules found on this date. Attendance is linked to the first schedule.</p>
+              <p className="subtitle">{t("multipleSchedulesFound")}</p>
             ) : null}
           </section>
         ) : null}

@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
@@ -9,6 +10,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const { t } = useTranslation();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -18,7 +20,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
     try {
       await onSubmit(email, password);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Login failed.";
+      const message = error instanceof Error ? error.message : t("loginFailed");
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
@@ -28,7 +30,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
   return (
     <form className="form" onSubmit={handleSubmit}>
       <label className="label" htmlFor="email">
-        Email
+        {t("email")}
         <input
           id="email"
           className="input"
@@ -40,7 +42,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
       </label>
 
       <label className="label" htmlFor="password">
-        Password
+        {t("password")}
         <input
           id="password"
           className="input"
@@ -52,7 +54,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
       </label>
 
       <button className="button" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Signing in..." : "Sign in"}
+        {isSubmitting ? t("signingIn") : t("signIn")}
       </button>
 
       {errorMessage ? <p className="message-error">{errorMessage}</p> : null}
