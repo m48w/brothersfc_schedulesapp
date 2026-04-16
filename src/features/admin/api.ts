@@ -135,13 +135,16 @@ export async function upsertAttendance(input: {
   status: "present" | "absent" | "late";
   note: string;
 }): Promise<void> {
-  const { error } = await supabase.from("attendance").upsert({
-    schedule_id: input.schedule_id,
-    user_id: input.user_id,
-    attendance_date: input.attendance_date,
-    status: input.status,
-    note: input.note || null,
-    recorded_at: new Date().toISOString()
-  });
+  const { error } = await supabase.from("attendance").upsert(
+    {
+      schedule_id: input.schedule_id,
+      user_id: input.user_id,
+      attendance_date: input.attendance_date,
+      status: input.status,
+      note: input.note || null,
+      recorded_at: new Date().toISOString()
+    },
+    { onConflict: "schedule_id,user_id" }
+  );
   throwOnError(error, "Failed to save attendance");
 }

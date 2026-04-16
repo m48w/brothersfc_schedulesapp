@@ -23,10 +23,13 @@ This project provides a clean, maintainable foundation for role-based access in 
   - Schedule: compact create form with category master (`練習 / 試合 / イベント`) and monthly list
   - Attendance: monthly day-by-day player list with per-day participant totals and inline attendance saving
 - Player portal tabs:
+  - Shared UI: header shows the logo on the left and logout on the right; navigation uses icons on desktop/tablet and icons with small labels on mobile
   - Dashboard: next event, next practice/match, live countdowns, participant counts, participant lists, monthly participant overview
-  - Schedule: monthly day-by-day schedule list with attendance posting
+  - Schedule: monthly day-by-day schedule list with attendance posting and vote updates allowed until the schedule start time
   - Profile: editable player profile card backed by `player_profile`
   - Settings: language saved in `localStorage` and password update
+- Player attendance voting supports `present` / `absent` only. Players can update their own vote before the schedule starts, and voting is disabled after the deadline.
+- The player dashboard realtime clock has been removed from the player-facing screen.
 - Global Settings page for user preferences.
 - Internationalization (i18n) support (English & Japanese) via `react-i18next`.
 - Feature-oriented folder structure for scalability.

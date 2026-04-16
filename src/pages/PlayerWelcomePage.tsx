@@ -22,6 +22,7 @@ import {
 import { fetchPlayerProfile, PlayerProfileDetail, upsertPlayerProfile } from "../features/player/api";
 
 type PlayerTab = "dashboard" | "schedule" | "profile" | "settings";
+type AttendanceStatus = "present" | "absent" | "late";
 
 interface PlayerLocationState {
   playerName?: string;
@@ -50,6 +51,8 @@ const EMPTY_PLAYER_PROFILE_FORM: PlayerProfileForm = {
   current_status: true,
   remark: ""
 };
+
+const ATTENDANCE_OPEN_STATUSES: AttendanceStatus[] = ["present", "absent"];
 
 export function PlayerWelcomePage() {
   const navigate = useNavigate();
@@ -281,6 +284,17 @@ export function PlayerWelcomePage() {
   const getScheduleDateTime = (schedule: ScheduleItem) =>
     new Date(`${schedule.schedule_date}T${schedule.start_time ?? "00:00"}`);
 
+  const isAttendanceOpen = (schedule: ScheduleItem) => getScheduleDateTime(schedule).getTime() > currentTime.getTime();
+
+  const getAttendanceWindowMessage = (schedule: ScheduleItem) =>
+    isAttendanceOpen(schedule)
+      ? i18n.language === "ja"
+        ? "期限内のため、出欠は更新できます。"
+        : "Attendance can be updated until the schedule starts."
+      : i18n.language === "ja"
+        ? "制限期間を過ぎたため、出欠は変更できません。"
+        : "Attendance voting is closed for this schedule.";
+
   const getCategoryLabel = (categoryId: number) => categoryById[categoryId]?.category_name ?? t("unassigned");
   const getCategoryCode = (categoryId: number) => categoryById[categoryId]?.category_code ?? "practice";
 
@@ -329,7 +343,7 @@ export function PlayerWelcomePage() {
   const handleAttendanceSubmit = async (
     scheduleId: number,
     attendanceDate: string,
-    status: "present" | "absent" | "late"
+    status: AttendanceStatus
   ) => {
     if (!playerUserId) return;
     setSavingAttendanceScheduleId(scheduleId);
@@ -411,6 +425,7 @@ export function PlayerWelcomePage() {
     const participants = getParticipants(schedule.id);
     const myAttendance = attendanceByScheduleAndUser[`${schedule.id}:${playerUserId}`];
     const locationMaster = schedule.location_id ? locationById[schedule.location_id] : null;
+    const attendanceOpen = isAttendanceOpen(schedule);
 
     return (
       <article className="player-schedule-card" key={schedule.id}>
@@ -453,34 +468,24 @@ export function PlayerWelcomePage() {
 
         {showActions ? (
           <div className="attendance-action-row">
-            <span className="attendance-status-chip">
+            <span className={`attendance-status-chip ${attendanceOpen ? "attendance-status-chip-open" : "attendance-status-chip-closed"}`}>
               {t("yourAttendanceStatus")}: {myAttendance ? t(myAttendance.status) : t("notAnswered")}
             </span>
+            <span className={`attendance-window-note ${attendanceOpen ? "attendance-window-note-open" : "attendance-window-note-closed"}`}>
+              {getAttendanceWindowMessage(schedule)}
+            </span>
             <div className="inline-actions">
-              <button
-                className="button button-compact"
-                type="button"
-                disabled={savingAttendanceScheduleId === schedule.id}
-                onClick={() => void handleAttendanceSubmit(schedule.id, schedule.schedule_date, "present")}
-              >
-                {t("join")}
-              </button>
-              <button
-                className="button button-secondary button-compact"
-                type="button"
-                disabled={savingAttendanceScheduleId === schedule.id}
-                onClick={() => void handleAttendanceSubmit(schedule.id, schedule.schedule_date, "late")}
-              >
-                {t("late")}
-              </button>
-              <button
-                className="button button-secondary button-compact"
-                type="button"
-                disabled={savingAttendanceScheduleId === schedule.id}
-                onClick={() => void handleAttendanceSubmit(schedule.id, schedule.schedule_date, "absent")}
-              >
-                {t("absent")}
-              </button>
+              {ATTENDANCE_OPEN_STATUSES.map((status) => (
+                <button
+                  key={`${schedule.id}-${status}`}
+                  className={`button button-compact ${status === "absent" ? "button-secondary" : ""}`}
+                  type="button"
+                  disabled={!attendanceOpen || savingAttendanceScheduleId === schedule.id}
+                  onClick={() => void handleAttendanceSubmit(schedule.id, schedule.schedule_date, status)}
+                >
+                  {status === "present" ? t("join") : t("absent")}
+                </button>
+              ))}
             </div>
           </div>
         ) : null}
@@ -491,15 +496,66 @@ export function PlayerWelcomePage() {
   return (
     <main className="player-app-shell">
       <header className="player-header">
-        <button className="button button-secondary button-topbar" onClick={handleLogout} disabled={isLoggingOut}>
-          {isLoggingOut ? t("loggingOut") : t("logout")}
-        </button>
+        <div className="player-logo-badge">FC</div>
         <div className="player-header-center">
           <p className="brand-name">Brothers FC</p>
           <p className="brand-sub">{playerName}</p>
         </div>
-        <div className="player-logo-badge">FC</div>
+        <button className="button button-secondary button-topbar" onClick={handleLogout} disabled={isLoggingOut}>
+          {isLoggingOut ? t("loggingOut") : t("logout")}
+        </button>
       </header>
+
+      <nav className="player-bottom-nav player-bottom-nav-desktop" aria-label="Player navigation">
+        <button
+          className={`player-nav-item ${activeTab === "dashboard" ? "player-nav-item-active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("dashboard")}
+        >
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M4 13h7V4H4v9Zm9 7h7v-7h-7v7ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("dashboard")}</span>
+        </button>
+        <button
+          className={`player-nav-item ${activeTab === "schedule" ? "player-nav-item-active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("schedule")}
+        >
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M7 2h2v2h6V2h2v2h3v18H4V4h3V2Zm11 8H6v10h12V10Zm0-4H6v2h12V6Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("schedule")}</span>
+        </button>
+        <button
+          className={`player-nav-item ${activeTab === "profile" ? "player-nav-item-active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("profile")}
+        >
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("profile")}</span>
+        </button>
+        <button
+          className={`player-nav-item ${activeTab === "settings" ? "player-nav-item-active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("settings")}
+        >
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58-1.92-3.32-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54h-3.84l-.36 2.54c-.58.22-1.12.54-1.63.94l-2.39-.96-1.92 3.32 2.03 1.58a7.93 7.93 0 0 0 0 1.88l-2.03 1.58 1.92 3.32 2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54h3.84l.36-2.54c.58-.22 1.12-.54 1.63-.94l2.39.96 1.92-3.32-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("settings")}</span>
+        </button>
+      </nav>
 
       <section className="player-content-card">
         {loading ? <p>{t("loading")}</p> : null}
@@ -508,15 +564,6 @@ export function PlayerWelcomePage() {
         {!loading && activeTab === "dashboard" ? (
           <section className="section">
             <div className="scoreboard">
-              <div className="scoreboard-panel">
-                <span className="scoreboard-label">{t("realtimeClock")}</span>
-                <strong className="scoreboard-time">
-                  {currentTime.toLocaleTimeString(i18n.language === "ja" ? "ja-JP" : "en-US")}
-                </strong>
-                <span className="scoreboard-date">
-                  {currentTime.toLocaleDateString(i18n.language === "ja" ? "ja-JP" : "en-US")}
-                </span>
-              </div>
               <div className="scoreboard-panel scoreboard-panel-highlight">
                 <span className="scoreboard-label">{t("nextKickoff")}</span>
                 <strong className="scoreboard-time">
@@ -780,34 +827,54 @@ export function PlayerWelcomePage() {
         ) : null}
       </section>
 
-      <nav className="player-bottom-nav">
+      <nav className="player-bottom-nav player-bottom-nav-mobile" aria-label="Player navigation">
         <button
           className={`player-nav-item ${activeTab === "dashboard" ? "player-nav-item-active" : ""}`}
           type="button"
           onClick={() => setActiveTab("dashboard")}
         >
-          {t("dashboard")}
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M4 13h7V4H4v9Zm9 7h7v-7h-7v7ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("dashboard")}</span>
         </button>
         <button
           className={`player-nav-item ${activeTab === "schedule" ? "player-nav-item-active" : ""}`}
           type="button"
           onClick={() => setActiveTab("schedule")}
         >
-          {t("schedule")}
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M7 2h2v2h6V2h2v2h3v18H4V4h3V2Zm11 8H6v10h12V10Zm0-4H6v2h12V6Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("schedule")}</span>
         </button>
         <button
           className={`player-nav-item ${activeTab === "profile" ? "player-nav-item-active" : ""}`}
           type="button"
           onClick={() => setActiveTab("profile")}
         >
-          {t("profile")}
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("profile")}</span>
         </button>
         <button
           className={`player-nav-item ${activeTab === "settings" ? "player-nav-item-active" : ""}`}
           type="button"
           onClick={() => setActiveTab("settings")}
         >
-          {t("settings")}
+          <span className="player-nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58-1.92-3.32-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54h-3.84l-.36 2.54c-.58.22-1.12.54-1.63.94l-2.39-.96-1.92 3.32 2.03 1.58a7.93 7.93 0 0 0 0 1.88l-2.03 1.58 1.92 3.32 2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54h3.84l.36-2.54c.58-.22 1.12-.54 1.63-.94l2.39.96 1.92-3.32-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+            </svg>
+          </span>
+          <span className="player-nav-label">{t("settings")}</span>
         </button>
       </nav>
     </main>

@@ -77,6 +77,10 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 16px;
 }
 
+.player-bottom-nav-desktop {
+  margin-top: 16px;
+}
+
 /* Glassmorphism Cards */
 .card, .content-card {
   border-radius: 24px;
@@ -802,6 +806,29 @@ select.input option {
   color: var(--text-muted);
 }
 
+.attendance-status-chip-open {
+  background: rgba(34, 197, 94, 0.12);
+  color: #bbf7d0;
+}
+
+.attendance-status-chip-closed {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fecaca;
+}
+
+.attendance-window-note {
+  flex: 1 1 220px;
+  font-size: 0.84rem;
+}
+
+.attendance-window-note-open {
+  color: #bbf7d0;
+}
+
+.attendance-window-note-closed {
+  color: #fecaca;
+}
+
 .live-countdown-text {
   margin: 0 0 16px;
   font-family: var(--font-heading);
@@ -859,12 +886,7 @@ select.input option {
 }
 
 .player-bottom-nav {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
-  z-index: 60;
-  display: none;
+  display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   padding: 10px;
@@ -874,6 +896,15 @@ select.input option {
   backdrop-filter: blur(16px);
 }
 
+.player-bottom-nav-mobile {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 60;
+  display: none;
+}
+
 .player-nav-item {
   border: none;
   border-radius: 14px;
@@ -881,11 +912,41 @@ select.input option {
   background: transparent;
   color: var(--text-muted);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.player-nav-item:hover {
+  color: var(--text-main);
+  background: rgba(255,255,255,0.05);
 }
 
 .player-nav-item-active {
   background: linear-gradient(135deg, var(--field-green), var(--accent-primary));
   color: var(--text-dark);
+}
+
+.player-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.player-nav-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.player-nav-label {
+  font-size: 0.82rem;
+  line-height: 1.1;
 }
 
 /* Tables */
@@ -972,6 +1033,15 @@ select.input option {
   .settings-grid {
     grid-template-columns: 1fr;
   }
+  .player-app-shell {
+    padding-bottom: 112px;
+  }
+  .player-bottom-nav-desktop {
+    display: none;
+  }
+  .player-bottom-nav-mobile {
+    display: grid;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1049,7 +1119,16 @@ select.input option {
     z-index: 55;
   }
   .player-bottom-nav {
-    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .player-nav-item {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 6px;
+  }
+  .player-nav-label {
+    display: inline;
+    font-size: 0.68rem;
   }
   .player-schedule-header,
   .attendance-action-row,
@@ -1064,5 +1143,11 @@ select.input option {
   .attendance-action-row .inline-actions .button,
   .settings-language-actions .button {
     flex: 1 1 30%;
+  }
+}
+
+@media (min-width: 641px) {
+  .player-nav-label {
+    display: none;
   }
 }
