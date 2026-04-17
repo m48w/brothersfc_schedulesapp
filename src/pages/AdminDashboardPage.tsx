@@ -1,6 +1,13 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+﻿import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import {
+  FaArrowRightFromBracket,
+  FaCalendarDays,
+  FaClipboardCheck,
+  FaGear,
+  FaHouse
+} from "react-icons/fa6";
 import {
   AppUser,
   AttendanceItem,
@@ -20,13 +27,17 @@ import { logout } from "../features/auth/api";
 import { supabase } from "../lib/supabase";
 
 type AdminTab = "dashboard" | "schedule" | "attendance";
+type AttendanceStatus = "present" | "absent" | "late";
+type LocationType = "stadium" | "event";
 
 interface ScheduleForm {
   id?: number;
   schedule_date: string;
   start_time: string;
   end_time: string;
+  vote_deadline: string;
   category_id: string;
+  location_type: LocationType | "";
   location_id: string;
   description: string;
 }
@@ -35,10 +46,25 @@ const EMPTY_FORM: ScheduleForm = {
   schedule_date: "",
   start_time: "",
   end_time: "",
+  vote_deadline: "",
   category_id: "",
+  location_type: "",
   location_id: "",
   description: ""
 };
+
+function toDateTimeInputValue(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+  const date = new Date(value);
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function toIsoFromDateTimeInput(value: string): string {
+  return new Date(value).toISOString();
+}
 
 export function AdminDashboardPage() {
   const navigate = useNavigate();
@@ -58,8 +84,6 @@ export function AdminDashboardPage() {
   const [selectedAttendanceMonth, setSelectedAttendanceMonth] = useState("");
   const [selectedDashboardMonth, setSelectedDashboardMonth] = useState("");
   const [savingAttendanceKey, setSavingAttendanceKey] = useState("");
-  const [adminName, setAdminName] = useState("Admin");
-  const [currentTime, setCurrentTime] = useState(() => new Date());
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -133,36 +157,14 @@ export function AdminDashboardPage() {
     void loadData();
   }, []);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const resolveAdminName = async () => {
-      const { data } = await supabase.auth.getUser();
-      const userId = data.user?.id;
-      if (!userId) {
-        return;
-      }
-      const currentAdmin = users.find((user) => user.id === userId);
-      if (currentAdmin) {
-        setAdminName(currentAdmin.full_name);
-      }
-    };
-    void resolveAdminName();
-  }, [users]);
-
   const players = useMemo(
     () => users.filter((user) => user.role === "player" && user.is_active_player),
     [users]
   );
 
-  const locationNameById = useMemo(() => {
-    return locations.reduce<Record<number, string>>((acc, item) => {
-      acc[item.id] = item.facility_name;
+  const locationById = useMemo(() => {
+    return locations.reduce<Record<number, LocationMaster>>((acc, item) => {
+      acc[item.id] = item;
       return acc;
     }, {});
   }, [locations]);
@@ -173,6 +175,13 @@ export function AdminDashboardPage() {
       return acc;
     }, {});
   }, [categories]);
+
+  const filteredLocations = useMemo(() => {
+    if (!scheduleForm.location_type) {
+      return [];
+    }
+    return locations.filter((location) => location.location_type === scheduleForm.location_type);
+  }, [locations, scheduleForm.location_type]);
 
   const scheduleMonths = useMemo(() => {
     return Array.from(new Set(schedules.map((item) => item.schedule_date.slice(0, 7)))).sort();
@@ -205,106 +214,66 @@ export function AdminDashboardPage() {
 
   useEffect(() => {
     if (scheduleMonths.length === 0) {
-      if (selectedScheduleMonth) {
-        setSelectedScheduleMonth("");
-      }
-      return;
-    }
-    if (!selectedScheduleMonth || !scheduleMonths.includes(selectedScheduleMonth)) {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      setSelectedScheduleMonth(
-        scheduleMonths.includes(currentMonth) ? currentMonth : scheduleMonths[0]
-      );
-    }
-  }, [scheduleMonths, selectedScheduleMonth]);
-
-  useEffect(() => {
-    if (scheduleMonths.length === 0) {
-      if (selectedAttendanceMonth) {
-        setSelectedAttendanceMonth("");
-      }
-      if (selectedDashboardMonth) {
-        setSelectedDashboardMonth("");
-      }
+      setSelectedScheduleMonth("");
+      setSelectedAttendanceMonth("");
+      setSelectedDashboardMonth("");
       return;
     }
     const currentMonth = new Date().toISOString().slice(0, 7);
+    if (!selectedScheduleMonth || !scheduleMonths.includes(selectedScheduleMonth)) {
+      setSelectedScheduleMonth(scheduleMonths.includes(currentMonth) ? currentMonth : scheduleMonths[0]);
+    }
     if (!selectedAttendanceMonth || !scheduleMonths.includes(selectedAttendanceMonth)) {
       setSelectedAttendanceMonth(scheduleMonths.includes(currentMonth) ? currentMonth : scheduleMonths[0]);
     }
     if (!selectedDashboardMonth || !scheduleMonths.includes(selectedDashboardMonth)) {
       setSelectedDashboardMonth(scheduleMonths.includes(currentMonth) ? currentMonth : scheduleMonths[0]);
     }
-  }, [scheduleMonths, selectedAttendanceMonth, selectedDashboardMonth]);
+  }, [scheduleMonths, selectedAttendanceMonth, selectedDashboardMonth, selectedScheduleMonth]);
+
+  useEffect(() => {
+    if (
+      scheduleForm.location_id &&
+      filteredLocations.every((location) => String(location.id) !== scheduleForm.location_id)
+    ) {
+      setScheduleForm((prev) => ({ ...prev, location_id: "" }));
+    }
+  }, [filteredLocations, scheduleForm.location_id]);
 
   const monthlySchedules = selectedScheduleMonth ? schedulesByMonth[selectedScheduleMonth] ?? [] : [];
   const monthlyAttendanceSchedules = selectedAttendanceMonth ? schedulesByMonth[selectedAttendanceMonth] ?? [] : [];
-  const selectedMonthDate = selectedScheduleMonth ? new Date(`${selectedScheduleMonth}-01T00:00:00`) : null;
-  const selectedMonthLabel = selectedMonthDate
-    ? new Intl.DateTimeFormat(i18n.language === "ja" ? "ja-JP" : "en-US", {
-        month: i18n.language === "ja" ? "numeric" : "long"
-      }).format(selectedMonthDate)
-    : "";
-  const monthlyScheduleTitle = selectedMonthLabel
-    ? t("monthlyTrainingScheduleTitle", { month: selectedMonthLabel })
-    : t("monthlyView");
 
   const nextPracticeOrMatch = useMemo(() => {
-    return schedules.find((item) => {
-      const categoryCode = categoryById[item.category_id]?.category_code;
-      if (categoryCode !== "practice" && categoryCode !== "match") {
-        return false;
-      }
-      const scheduleDateTime = new Date(`${item.schedule_date}T${item.start_time ?? "00:00"}`);
-      return scheduleDateTime.getTime() >= currentTime.getTime();
-    }) ?? null;
-  }, [categoryById, currentTime, schedules]);
-
-  const nextPracticeOrMatchDateTime = nextPracticeOrMatch
-    ? new Date(`${nextPracticeOrMatch.schedule_date}T${nextPracticeOrMatch.start_time ?? "00:00"}`)
-    : null;
-
-  const nextPracticeOrMatchParticipants = useMemo(() => {
-    if (!nextPracticeOrMatch) {
-      return [];
-    }
-    return attendance
-      .filter(
-        (item) =>
-          item.schedule_id === nextPracticeOrMatch.id && (item.status === "present" || item.status === "late")
-      )
-      .map((item) => playerNameById[item.user_id])
-      .filter((name): name is string => Boolean(name))
-      .sort((a, b) => a.localeCompare(b, i18n.language === "ja" ? "ja" : "en"));
-  }, [attendance, i18n.language, nextPracticeOrMatch, playerNameById]);
+    const now = Date.now();
+    return (
+      schedules.find((item) => {
+        const categoryCode = categoryById[item.category_id]?.category_code;
+        if (categoryCode !== "practice" && categoryCode !== "match") {
+          return false;
+        }
+        return new Date(`${item.schedule_date}T${item.start_time ?? "00:00"}`).getTime() >= now;
+      }) ?? null
+    );
+  }, [categoryById, schedules]);
 
   const nextEvent = useMemo(() => {
-    return schedules.find((item) => {
-      const categoryCode = categoryById[item.category_id]?.category_code;
-      if (categoryCode !== "event") {
-        return false;
-      }
-      const scheduleDateTime = new Date(`${item.schedule_date}T${item.start_time ?? "00:00"}`);
-      return scheduleDateTime.getTime() >= currentTime.getTime();
-    }) ?? null;
-  }, [categoryById, currentTime, schedules]);
+    const now = Date.now();
+    return (
+      schedules.find((item) => {
+        if (categoryById[item.category_id]?.category_code !== "event") {
+          return false;
+        }
+        return new Date(`${item.schedule_date}T${item.start_time ?? "00:00"}`).getTime() >= now;
+      }) ?? null
+    );
+  }, [categoryById, schedules]);
 
-  const nextEventDateTime = nextEvent
-    ? new Date(`${nextEvent.schedule_date}T${nextEvent.start_time ?? "00:00"}`)
-    : null;
-
-  const nextEventParticipants = useMemo(() => {
-    if (!nextEvent) {
-      return [];
-    }
-    return attendance
-      .filter(
-        (item) => item.schedule_id === nextEvent.id && (item.status === "present" || item.status === "late")
-      )
+  const getParticipants = (scheduleId: number) =>
+    attendance
+      .filter((item) => item.schedule_id === scheduleId && (item.status === "present" || item.status === "late"))
       .map((item) => playerNameById[item.user_id])
       .filter((name): name is string => Boolean(name))
       .sort((a, b) => a.localeCompare(b, i18n.language === "ja" ? "ja" : "en"));
-  }, [attendance, i18n.language, nextEvent, playerNameById]);
 
   const dashboardAttendanceRates = useMemo(() => {
     const targetSchedules = selectedDashboardMonth ? schedulesByMonth[selectedDashboardMonth] ?? [] : [];
@@ -318,12 +287,7 @@ export function AdminDashboardPage() {
       ).length;
       const total = targetSchedules.length;
       const rate = total === 0 ? 0 : Math.round((attended / total) * 100);
-      return {
-        player,
-        attended,
-        total,
-        rate
-      };
+      return { player, attended, total, rate };
     });
   }, [attendance, players, schedulesByMonth, selectedDashboardMonth]);
 
@@ -331,19 +295,17 @@ export function AdminDashboardPage() {
     return monthlyAttendanceSchedules.map((schedule) => {
       const rows = players.map((player) => {
         const record = attendanceByScheduleAndUser[`${schedule.id}:${player.id}`];
-        const status = record?.status ?? "absent";
         return {
           player,
-          status
+          status: (record?.status ?? "absent") as AttendanceStatus
         };
       });
-      const participants = rows
-        .filter((row) => row.status === "present" || row.status === "late")
-        .map((row) => row.player.full_name);
       return {
         schedule,
         rows,
-        participants
+        participants: rows
+          .filter((row) => row.status === "present" || row.status === "late")
+          .map((row) => row.player.full_name)
       };
     });
   }, [attendanceByScheduleAndUser, monthlyAttendanceSchedules, players]);
@@ -362,6 +324,10 @@ export function AdminDashboardPage() {
       setPageMessage(t("errorNoAuthAdmin"));
       return;
     }
+    if (!scheduleForm.location_type || !scheduleForm.location_id) {
+      setPageMessage(t("errorLocationTypeRequired"));
+      return;
+    }
 
     try {
       await upsertSchedule({
@@ -369,27 +335,30 @@ export function AdminDashboardPage() {
         schedule_date: scheduleForm.schedule_date,
         start_time: scheduleForm.start_time,
         end_time: scheduleForm.end_time,
+        vote_deadline: toIsoFromDateTimeInput(scheduleForm.vote_deadline),
         category_id: Number(scheduleForm.category_id),
-        location_id: scheduleForm.location_id ? Number(scheduleForm.location_id) : null,
+        location_id: Number(scheduleForm.location_id),
         description: scheduleForm.description,
         created_by: currentUserId
       });
       resetScheduleForm();
       await loadData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("errorSaveSchedule");
-      setPageMessage(message);
+      setPageMessage(error instanceof Error ? error.message : t("errorSaveSchedule"));
     }
   };
 
   const handleEditSchedule = (item: ScheduleItem) => {
+    const location = locationById[item.location_id];
     setScheduleForm({
       id: item.id,
       schedule_date: item.schedule_date,
       start_time: item.start_time ?? "",
       end_time: item.end_time ?? "",
+      vote_deadline: toDateTimeInputValue(item.vote_deadline),
       category_id: String(item.category_id),
-      location_id: item.location_id ? String(item.location_id) : "",
+      location_type: location?.location_type ?? "",
+      location_id: String(item.location_id),
       description: item.description ?? ""
     });
     setSelectedScheduleMonth(item.schedule_date.slice(0, 7));
@@ -403,64 +372,15 @@ export function AdminDashboardPage() {
       await deleteSchedule(id);
       await loadData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("errorDeleteSchedule");
-      setPageMessage(message);
+      setPageMessage(error instanceof Error ? error.message : t("errorDeleteSchedule"));
     }
-  };
-
-  const formatMonthLabel = (month: string) => {
-    const monthDate = new Date(`${month}-01T00:00:00`);
-    return new Intl.DateTimeFormat(i18n.language === "ja" ? "ja-JP" : "en-US", {
-      month: i18n.language === "ja" ? "numeric" : "long"
-    }).format(monthDate);
-  };
-
-  const formatDateTimeDistance = (date: Date) => {
-    const diffMs = date.getTime() - currentTime.getTime();
-    const isPast = diffMs < 0;
-    const totalMinutes = Math.abs(Math.round(diffMs / (1000 * 60)));
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
-    return t("timeUntilSchedule", {
-      prefix: isPast ? t("timeAgoPrefix") : t("timeLeftPrefix"),
-      days,
-      hours,
-      minutes
-    });
-  };
-
-  const formatClock = (date: Date) => {
-    return new Intl.DateTimeFormat(i18n.language === "ja" ? "ja-JP" : "en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    }).format(date);
-  };
-
-  const formatTimeRange = (item: ScheduleItem) => {
-    if (item.start_time && item.end_time) {
-      return `${item.start_time} - ${item.end_time}`;
-    }
-    if (item.start_time) {
-      return item.start_time;
-    }
-    return "--:--";
-  };
-
-  const getCategoryLabel = (categoryId: number) => {
-    return categoryById[categoryId]?.category_name ?? t("unassigned");
-  };
-
-  const getCategoryCode = (categoryId: number) => {
-    return categoryById[categoryId]?.category_code ?? "practice";
   };
 
   const handleAttendanceChange = async (
     scheduleId: number,
     attendanceDate: string,
     userId: string,
-    status: "present" | "absent" | "late"
+    status: AttendanceStatus
   ) => {
     setPageMessage("");
     setSavingAttendanceKey(`${scheduleId}:${userId}`);
@@ -474,97 +394,122 @@ export function AdminDashboardPage() {
       });
       await loadData();
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("errorSaveAttendance");
-      setPageMessage(message);
+      setPageMessage(error instanceof Error ? error.message : t("errorSaveAttendance"));
     } finally {
       setSavingAttendanceKey("");
     }
   };
 
+  const formatMonthLabel = (month: string) => {
+    const monthDate = new Date(`${month}-01T00:00:00`);
+    return new Intl.DateTimeFormat(i18n.language === "ja" ? "ja-JP" : "en-US", {
+      month: i18n.language === "ja" ? "numeric" : "long"
+    }).format(monthDate);
+  };
+
+  const formatTimeRange = (item: ScheduleItem) => {
+    if (item.start_time && item.end_time) {
+      return `${item.start_time} - ${item.end_time}`;
+    }
+    if (item.start_time) {
+      return item.start_time;
+    }
+    return "--:--";
+  };
+
+  const formatDateTime = (value: string) =>
+    new Intl.DateTimeFormat(i18n.language === "ja" ? "ja-JP" : "en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(new Date(value));
+
+  const getCategoryLabel = (categoryId: number) => {
+    return categoryById[categoryId]?.category_name ?? t("unassigned");
+  };
+
+  const getCategoryCode = (categoryId: number) => {
+    return categoryById[categoryId]?.category_code ?? "practice";
+  };
+
+  const getLocationTypeLabel = (locationType: LocationType) => {
+    return locationType === "stadium" ? t("stadium") : t("eventLocation");
+  };
+
+  const renderNavButton = (tab: AdminTab, label: string, icon: ReactNode) => (
+    <button
+      className={`player-nav-item ${activeTab === tab ? "player-nav-item-active" : ""}`}
+      type="button"
+      onClick={() => setActiveTab(tab)}
+    >
+      <span className="player-nav-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="player-nav-label">{label}</span>
+    </button>
+  );
+
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-logo">FC</div>
-          <div>
-            <p className="brand-name">Brothers FC</p>
-            <p className="brand-sub">{t("brandSub")}</p>
-          </div>
+    <main className="player-app-shell admin-app-shell">
+      <header className="player-header admin-header">
+        <div className="player-logo-badge">FC</div>
+        <div className="player-header-center admin-header-center">
+          <p className="brand-name">Brothers FC</p>
+          <p className="brand-sub">{t("brandSub")}</p>
         </div>
-        <nav className="menu">
-          <button className={`menu-item ${activeTab === "dashboard" ? "menu-item-active" : ""}`} onClick={() => setActiveTab("dashboard")}>
-            {t("dashboard")}
-          </button>
-          <button className={`menu-item ${activeTab === "schedule" ? "menu-item-active" : ""}`} onClick={() => setActiveTab("schedule")}>
-            {t("schedule")}
-          </button>
-          <button className={`menu-item ${activeTab === "attendance" ? "menu-item-active" : ""}`} onClick={() => setActiveTab("attendance")}>
-            {t("attendance")}
-          </button>
-        </nav>
-        <div className="profile">
-          <div className="avatar">{adminName.slice(0, 1).toUpperCase()}</div>
-          <span>{adminName}</span>
-          <Link to="/settings" className="button button-secondary button-topbar">
-            {t("settings")}
+        <div className="admin-header-actions">
+          <Link to="/settings" className="button button-secondary button-topbar admin-header-button">
+            <FaGear />
+            <span>{t("settings")}</span>
           </Link>
-          <button className="button button-secondary button-topbar button-logout-top" onClick={handleLogout} disabled={isLoggingOut}>
-            {isLoggingOut ? t("loggingOut") : t("logout")}
+          <button
+            className="button button-secondary button-topbar button-logout-top admin-header-button"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            <FaArrowRightFromBracket />
+            <span>{isLoggingOut ? t("loggingOut") : t("logout")}</span>
           </button>
         </div>
       </header>
 
-      <section className="content-card">
+      <nav className="player-bottom-nav player-bottom-nav-desktop" aria-label="Admin navigation">
+        {renderNavButton("dashboard", t("dashboard"), <FaHouse />)}
+        {renderNavButton("schedule", t("schedule"), <FaCalendarDays />)}
+        {renderNavButton("attendance", t("attendance"), <FaClipboardCheck />)}
+      </nav>
+
+      <section className="player-content-card content-card admin-content-card">
         {loading ? <p>{t("loading")}</p> : null}
         {pageMessage ? <p className="message-error">{pageMessage}</p> : null}
 
         {!loading && activeTab === "dashboard" ? (
           <section className="section">
-            <div className="scoreboard">
-              <div className="scoreboard-panel">
-                <span className="scoreboard-label">{t("realtimeClock")}</span>
-                <strong className="scoreboard-time">{formatClock(currentTime)}</strong>
-                <span className="scoreboard-date">{currentTime.toLocaleDateString(i18n.language === "ja" ? "ja-JP" : "en-US")}</span>
-              </div>
-              <div className="scoreboard-panel scoreboard-panel-highlight">
-                <span className="scoreboard-label">{t("nextKickoff")}</span>
-                <strong className="scoreboard-time">
-                  {nextPracticeOrMatchDateTime ? formatDateTimeDistance(nextPracticeOrMatchDateTime) : "--"}
-                </strong>
-                <span className="scoreboard-date">
-                  {nextPracticeOrMatch ? getCategoryLabel(nextPracticeOrMatch.category_id) : t("noUpcomingSchedule")}
-                </span>
-              </div>
-            </div>
-
             <h2 className="section-title">{t("nextScheduleSection")}</h2>
-            {nextPracticeOrMatch && nextPracticeOrMatchDateTime ? (
-              <div className={`summary-card summary-card-${getCategoryCode(nextPracticeOrMatch.category_id)}`}>
-                <div className="summary-header">
-                  <div>
-                    <span className={`category-pill category-pill-${getCategoryCode(nextPracticeOrMatch.category_id)}`}>
-                      {getCategoryLabel(nextPracticeOrMatch.category_id)}
-                    </span>
-                    <p className="summary-title">{t("nextScheduleHeadline", { category: getCategoryLabel(nextPracticeOrMatch.category_id) })}</p>
-                  </div>
-                  <div className="countdown-ring">
-                    <span>{formatClock(currentTime)}</span>
-                  </div>
-                </div>
+            {nextPracticeOrMatch ? (
+              <article className={`summary-card summary-card-${getCategoryCode(nextPracticeOrMatch.category_id)}`}>
+                <span className={`category-pill category-pill-${getCategoryCode(nextPracticeOrMatch.category_id)}`}>
+                  {getCategoryLabel(nextPracticeOrMatch.category_id)}
+                </span>
+                <p className="summary-title">{t("nextScheduleHeadline", { category: getCategoryLabel(nextPracticeOrMatch.category_id) })}</p>
                 <p className="summary-meta">
                   {nextPracticeOrMatch.schedule_date} / {formatTimeRange(nextPracticeOrMatch)}
                 </p>
-                <p className="summary-meta">{formatDateTimeDistance(nextPracticeOrMatchDateTime)}</p>
                 <p className="summary-meta">
-                  {nextPracticeOrMatch.location_id ? locationNameById[nextPracticeOrMatch.location_id] : t("noLocation")}
+                  {locationById[nextPracticeOrMatch.location_id]?.facility_name ?? t("noLocation")}
+                </p>
+                <p className="summary-meta">
+                  {t("voteDeadline")}: {formatDateTime(nextPracticeOrMatch.vote_deadline)}
                 </p>
                 <div className="participant-block">
                   <p className="participant-title">
-                    {t("participantsCountLabel", { count: nextPracticeOrMatchParticipants.length })}
+                    {t("participantsCountLabel", { count: getParticipants(nextPracticeOrMatch.id).length })}
                   </p>
-                  {nextPracticeOrMatchParticipants.length > 0 ? (
+                  {getParticipants(nextPracticeOrMatch.id).length > 0 ? (
                     <ul className="name-list">
-                      {nextPracticeOrMatchParticipants.map((name) => (
+                      {getParticipants(nextPracticeOrMatch.id).map((name) => (
                         <li key={name}>{name}</li>
                       ))}
                     </ul>
@@ -572,7 +517,7 @@ export function AdminDashboardPage() {
                     <p className="subtitle">{t("noParticipants")}</p>
                   )}
                 </div>
-              </div>
+              </article>
             ) : (
               <p className="subtitle">{t("noUpcomingSchedule")}</p>
             )}
@@ -580,40 +525,19 @@ export function AdminDashboardPage() {
             <div className="section-header section-header-spaced">
               <h2 className="section-title">{t("nextEventSection")}</h2>
             </div>
-            {nextEvent && nextEventDateTime ? (
-              <div className="summary-card summary-card-event">
-                <div className="summary-header">
-                  <div>
-                    <span className="category-pill category-pill-event">{getCategoryLabel(nextEvent.category_id)}</span>
-                    <p className="summary-title">{t("nextEventHeadline")}</p>
-                  </div>
-                  <div className="countdown-ring countdown-ring-event">
-                    <span>{formatClock(currentTime)}</span>
-                  </div>
-                </div>
+            {nextEvent ? (
+              <article className="summary-card summary-card-event">
+                <span className="category-pill category-pill-event">{getCategoryLabel(nextEvent.category_id)}</span>
+                <p className="summary-title">{t("nextEventHeadline")}</p>
                 <p className="summary-meta">
                   {nextEvent.schedule_date} / {formatTimeRange(nextEvent)}
                 </p>
-                <p className="summary-meta">{formatDateTimeDistance(nextEventDateTime)}</p>
+                <p className="summary-meta">{locationById[nextEvent.location_id]?.facility_name ?? t("noLocation")}</p>
                 <p className="summary-meta">
-                  {nextEvent.location_id ? locationNameById[nextEvent.location_id] : t("noLocation")}
+                  {t("voteDeadline")}: {formatDateTime(nextEvent.vote_deadline)}
                 </p>
                 <p className="summary-meta">{nextEvent.description || "-"}</p>
-                <div className="participant-block">
-                  <p className="participant-title">
-                    {t("participantsCountLabel", { count: nextEventParticipants.length })}
-                  </p>
-                  {nextEventParticipants.length > 0 ? (
-                    <ul className="name-list">
-                      {nextEventParticipants.map((name) => (
-                        <li key={`event-${name}`}>{name}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="subtitle">{t("noParticipants")}</p>
-                  )}
-                </div>
-              </div>
+              </article>
             ) : (
               <p className="subtitle">{t("noUpcomingEvent")}</p>
             )}
@@ -672,8 +596,12 @@ export function AdminDashboardPage() {
                   className="button button-secondary button-compact"
                   type="button"
                   onClick={() => {
-                    setScheduleForm(EMPTY_FORM);
-                    setIsScheduleFormOpen((prev) => !prev);
+                    if (isScheduleFormOpen) {
+                      resetScheduleForm();
+                    } else {
+                      setScheduleForm(EMPTY_FORM);
+                      setIsScheduleFormOpen(true);
+                    }
                   }}
                 >
                   {isScheduleFormOpen ? t("hideScheduleForm") : t("showScheduleForm")}
@@ -735,6 +663,37 @@ export function AdminDashboardPage() {
                     />
                   </label>
                   <label className="label">
+                    {t("voteDeadline")}
+                    <input
+                      className="input input-compact"
+                      type="datetime-local"
+                      value={scheduleForm.vote_deadline}
+                      onChange={(event) =>
+                        setScheduleForm((prev) => ({ ...prev, vote_deadline: event.target.value }))
+                      }
+                      required
+                    />
+                  </label>
+                  <label className="label">
+                    {t("locationType")}
+                    <select
+                      className="input input-compact"
+                      value={scheduleForm.location_type}
+                      onChange={(event) =>
+                        setScheduleForm((prev) => ({
+                          ...prev,
+                          location_type: event.target.value as LocationType | "",
+                          location_id: ""
+                        }))
+                      }
+                      required
+                    >
+                      <option value="">{t("selectLocationType")}</option>
+                      <option value="stadium">{t("stadium")}</option>
+                      <option value="event">{t("eventLocation")}</option>
+                    </select>
+                  </label>
+                  <label className="label">
                     {t("location")}
                     <select
                       className="input input-compact"
@@ -742,16 +701,17 @@ export function AdminDashboardPage() {
                       onChange={(event) =>
                         setScheduleForm((prev) => ({ ...prev, location_id: event.target.value }))
                       }
+                      required
                     >
-                      <option value="">{t("unassigned")}</option>
-                      {locations.map((location) => (
+                      <option value="">{t("selectLocation")}</option>
+                      {filteredLocations.map((location) => (
                         <option key={location.id} value={location.id}>
                           {location.facility_name}
                           {!location.is_active ? ` ${t("inactive")}` : ""}
                         </option>
                       ))}
                     </select>
-                    {locations.length === 0 ? (
+                    {filteredLocations.length === 0 ? (
                       <span className="helper-text">{t("noLocationRecords")}</span>
                     ) : null}
                   </label>
@@ -782,25 +742,19 @@ export function AdminDashboardPage() {
             ) : null}
 
             <div className="section-header section-header-spaced">
-              <h3 className="section-title">{monthlyScheduleTitle}</h3>
+              <h3 className="section-title">{t("monthlyView")}</h3>
               {scheduleMonths.length > 0 ? (
                 <div className="month-switcher" role="tablist" aria-label={t("monthlyView")}>
-                  {scheduleMonths.map((month) => {
-                    const monthDate = new Date(`${month}-01T00:00:00`);
-                    const label = new Intl.DateTimeFormat(i18n.language === "ja" ? "ja-JP" : "en-US", {
-                      month: i18n.language === "ja" ? "numeric" : "long"
-                    }).format(monthDate);
-                    return (
-                      <button
-                        key={month}
-                        className={`month-chip ${selectedScheduleMonth === month ? "month-chip-active" : ""}`}
-                        type="button"
-                        onClick={() => setSelectedScheduleMonth(month)}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
+                  {scheduleMonths.map((month) => (
+                    <button
+                      key={month}
+                      className={`month-chip ${selectedScheduleMonth === month ? "month-chip-active" : ""}`}
+                      type="button"
+                      onClick={() => setSelectedScheduleMonth(month)}
+                    >
+                      {formatMonthLabel(month)}
+                    </button>
+                  ))}
                 </div>
               ) : null}
             </div>
@@ -812,46 +766,53 @@ export function AdminDashboardPage() {
                     <tr>
                       <th>{t("date")}</th>
                       <th>{t("time")}</th>
+                      <th>{t("voteDeadline")}</th>
                       <th>{t("location")}</th>
                       <th>{t("notes")}</th>
                       <th>{t("actions")}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {monthlySchedules.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.schedule_date}</td>
-                        <td>
-                          {item.start_time ?? "--:--"}
-                          {item.end_time ? ` - ${item.end_time}` : ""}
-                        </td>
-                        <td>{item.location_id ? locationNameById[item.location_id] : t("noLocation")}</td>
-                        <td>
-                          <span className={`category-pill category-pill-${getCategoryCode(item.category_id)}`}>
-                            {getCategoryLabel(item.category_id)}
-                          </span>
-                          <span className="notes-text">{item.description || "-"}</span>
-                        </td>
-                        <td>
-                          <div className="inline-actions">
-                            <button
-                              className="button button-secondary button-compact"
-                              type="button"
-                              onClick={() => handleEditSchedule(item)}
-                            >
-                              {t("edit")}
-                            </button>
-                            <button
-                              className="button button-secondary button-compact"
-                              type="button"
-                              onClick={() => void handleDeleteSchedule(item.id)}
-                            >
-                              {t("delete")}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {monthlySchedules.map((item) => {
+                      const location = locationById[item.location_id];
+                      return (
+                        <tr key={item.id}>
+                          <td>{item.schedule_date}</td>
+                          <td>{formatTimeRange(item)}</td>
+                          <td>{formatDateTime(item.vote_deadline)}</td>
+                          <td>
+                            <span className="location-type-chip">
+                              {location ? getLocationTypeLabel(location.location_type) : t("unassigned")}
+                            </span>
+                            <span className="notes-text">{location?.facility_name ?? t("noLocation")}</span>
+                          </td>
+                          <td>
+                            <span className={`category-pill category-pill-${getCategoryCode(item.category_id)}`}>
+                              {getCategoryLabel(item.category_id)}
+                            </span>
+                            <span className="notes-text">{item.description || "-"}</span>
+                          </td>
+                          <td>
+                            <div className="inline-actions">
+                              <button
+                                className="button button-secondary button-compact"
+                                type="button"
+                                onClick={() => handleEditSchedule(item)}
+                              >
+                                {t("edit")}
+                              </button>
+                              <button
+                                className="button button-secondary button-compact"
+                                type="button"
+                                onClick={() => void handleDeleteSchedule(item.id)}
+                              >
+                                {t("delete")}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -883,75 +844,82 @@ export function AdminDashboardPage() {
 
             {attendanceScheduleCards.length > 0 ? (
               <div className="attendance-day-list">
-                {attendanceScheduleCards.map(({ schedule, rows, participants }) => (
-                  <article className="attendance-day-card" key={schedule.id}>
-                    <div className="attendance-day-header">
-                      <div>
-                        <h3 className="attendance-day-title">{schedule.schedule_date}</h3>
-                        <p className="summary-meta">
-                          {getCategoryLabel(schedule.category_id)} / {formatTimeRange(schedule)}
-                        </p>
-                        <p className="summary-meta">
-                          {schedule.location_id ? locationNameById[schedule.location_id] : t("noLocation")}
-                        </p>
+                {attendanceScheduleCards.map(({ schedule, rows, participants }) => {
+                  const location = locationById[schedule.location_id];
+                  return (
+                    <article className="attendance-day-card" key={schedule.id}>
+                      <div className="attendance-day-header">
+                        <div>
+                          <h3 className="attendance-day-title">{schedule.schedule_date}</h3>
+                          <p className="summary-meta">
+                            {getCategoryLabel(schedule.category_id)} / {formatTimeRange(schedule)}
+                          </p>
+                          <p className="summary-meta">
+                            {location?.facility_name ?? t("noLocation")}
+                            {location ? ` (${getLocationTypeLabel(location.location_type)})` : ""}
+                          </p>
+                          <p className="summary-meta">
+                            {t("voteDeadline")}: {formatDateTime(schedule.vote_deadline)}
+                          </p>
+                        </div>
+                        <div className="attendance-count-box">
+                          <span>{t("participantsTotal")}</span>
+                          <strong>{participants.length}</strong>
+                        </div>
                       </div>
-                      <div className="attendance-count-box">
-                        <span>{t("participantsTotal")}</span>
-                        <strong>{participants.length}</strong>
+
+                      <div className="participant-block">
+                        <p className="participant-title">{t("participantsList")}</p>
+                        {participants.length > 0 ? (
+                          <ul className="name-list">
+                            {participants.map((name) => (
+                              <li key={`${schedule.id}-${name}`}>{name}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="subtitle">{t("noParticipants")}</p>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="participant-block">
-                      <p className="participant-title">{t("participantsList")}</p>
-                      {participants.length > 0 ? (
-                        <ul className="name-list">
-                          {participants.map((name) => (
-                            <li key={`${schedule.id}-${name}`}>{name}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="subtitle">{t("noParticipants")}</p>
-                      )}
-                    </div>
-
-                    <div className="table-wrap">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th>{t("player")}</th>
-                            <th>{t("status")}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {rows.map((row) => (
-                            <tr key={`${schedule.id}-${row.player.id}`}>
-                              <td>{row.player.full_name}</td>
-                              <td>
-                                <select
-                                  className="input input-compact"
-                                  value={row.status}
-                                  disabled={savingAttendanceKey === `${schedule.id}:${row.player.id}`}
-                                  onChange={(event) =>
-                                    void handleAttendanceChange(
-                                      schedule.id,
-                                      schedule.schedule_date,
-                                      row.player.id,
-                                      event.target.value as "present" | "absent" | "late"
-                                    )
-                                  }
-                                >
-                                  <option value="present">{t("present")}</option>
-                                  <option value="late">{t("late")}</option>
-                                  <option value="absent">{t("absent")}</option>
-                                </select>
-                              </td>
+                      <div className="table-wrap">
+                        <table className="table">
+                          <thead>
+                            <tr>
+                              <th>{t("player")}</th>
+                              <th>{t("status")}</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </article>
-                ))}
+                          </thead>
+                          <tbody>
+                            {rows.map((row) => (
+                              <tr key={`${schedule.id}-${row.player.id}`}>
+                                <td>{row.player.full_name}</td>
+                                <td>
+                                  <select
+                                    className="input input-compact"
+                                    value={row.status}
+                                    disabled={savingAttendanceKey === `${schedule.id}:${row.player.id}`}
+                                    onChange={(event) =>
+                                      void handleAttendanceChange(
+                                        schedule.id,
+                                        schedule.schedule_date,
+                                        row.player.id,
+                                        event.target.value as AttendanceStatus
+                                      )
+                                    }
+                                  >
+                                    <option value="present">{t("present")}</option>
+                                    <option value="late">{t("late")}</option>
+                                    <option value="absent">{t("absent")}</option>
+                                  </select>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             ) : (
               <p className="subtitle">{t("noSchedules")}</p>
@@ -959,6 +927,12 @@ export function AdminDashboardPage() {
           </section>
         ) : null}
       </section>
+
+      <nav className="player-bottom-nav player-bottom-nav-mobile" aria-label="Admin navigation">
+        {renderNavButton("dashboard", t("dashboard"), <FaHouse />)}
+        {renderNavButton("schedule", t("schedule"), <FaCalendarDays />)}
+        {renderNavButton("attendance", t("attendance"), <FaClipboardCheck />)}
+      </nav>
     </main>
   );
 }

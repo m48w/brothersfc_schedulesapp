@@ -1,50 +1,54 @@
-[
-    {
-        "id": 1,
-      "facilityName": "FUT MESSE 海老江",
-      "address": "〒553-0001 大阪府大阪市福島区海老江８丁目１６",
-      "mapUrl": "https://maps.app.goo.gl/NqkHCcY8b1jLJoDj8",
-      "phoneNumber": "",
-      "email": "",
-      "remark": "",
-      "createdAt": "",
-      "updatedAt": "",
-      "isActive": true
-    },
-    {
-        "id": 2,
-      "facilityName": "FUT MESSE鶴見緑地",
-      "address": "〒538-0035 大阪府大阪市鶴見区緑地公園",
-      "mapUrl": "https://maps.app.goo.gl/NVQVzj8tZWhow6HW9",
-      "phoneNumber": "",
-      "email": "",
-      "remark": "",
-      "createdAt": "",
-      "updatedAt": "",
-      "isActive": true
-    },
-    {
-        "id": 3,
-      "facilityName": "鳥飼下地区 フットサル場",
-      "address": "〒566-0071 大阪府摂津市鳥飼下",
-      "mapUrl": "https://maps.app.goo.gl/9fDsUwXfZFKM7KeV8",
-      "phoneNumber": "",
-      "email": "",
-      "remark": "",
-      "createdAt": "",
-      "updatedAt": "",
-      "isActive": true
-    },
-    {
-        "id": 4,
-      "facilityName": "八尾市立南木の本防災体育館",
-      "address": "〒581-0042 大阪府八尾市南木の本３丁目１－９",
-      "mapUrl": "https://maps.app.goo.gl/ECF8uyEGTrqQJxAJ9",
-      "phoneNumber": "",
-      "email": "",
-      "remark": "",
-      "createdAt": "",
-      "updatedAt": "",
-      "isActive": true
-    }
-  ]
+﻿[
+  {
+    "id": 1,
+    "facilityName": "FUT MESSE Tsurumi",
+    "locationType": "stadium",
+    "address": "Osaka, Tsurumi-ku",
+    "mapUrl": "https://maps.app.goo.gl/NqkHCcY8b1jLJoDj8",
+    "phoneNumber": "",
+    "email": "",
+    "remark": "",
+    "createdAt": "",
+    "updatedAt": "",
+    "isActive": true
+  },
+  {
+    "id": 2,
+    "facilityName": "FUT MESSE Kaizuka",
+    "locationType": "stadium",
+    "address": "Osaka, Kaizuka",
+    "mapUrl": "https://maps.app.goo.gl/NVQVzj8tZWhow6HW9",
+    "phoneNumber": "",
+    "email": "",
+    "remark": "",
+    "createdAt": "",
+    "updatedAt": "",
+    "isActive": true
+  },
+  {
+    "id": 3,
+    "facilityName": "Club House Meeting Room",
+    "locationType": "event",
+    "address": "Osaka, Club House",
+    "mapUrl": "https://maps.app.goo.gl/9fDsUwXfZFKM7KeV8",
+    "phoneNumber": "",
+    "email": "",
+    "remark": "",
+    "createdAt": "",
+    "updatedAt": "",
+    "isActive": true
+  },
+  {
+    "id": 4,
+    "facilityName": "Sponsor Event Hall",
+    "locationType": "event",
+    "address": "Osaka, Event Hall",
+    "mapUrl": "https://maps.app.goo.gl/ECF8uyEGTrqQJxAJ9",
+    "phoneNumber": "",
+    "email": "",
+    "remark": "",
+    "createdAt": "",
+    "updatedAt": "",
+    "isActive": true
+  }
+]

@@ -77,6 +77,10 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 16px;
 }
 
+.admin-content-card {
+  margin-top: 16px;
+}
+
 .player-bottom-nav-desktop {
   margin-top: 16px;
 }
@@ -885,6 +889,35 @@ select.input option {
   margin-top: 12px;
 }
 
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-header-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.location-type-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .player-bottom-nav {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1098,6 +1131,10 @@ select.input option {
   .profile {
     flex-wrap: wrap;
     justify-content: center;
+  }
+  .admin-header-actions {
+    width: 100%;
+    justify-content: stretch;
   }
   .button-topbar {
     min-width: 0;

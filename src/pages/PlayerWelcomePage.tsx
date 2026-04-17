@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+﻿import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -284,17 +284,19 @@ export function PlayerWelcomePage() {
   const getScheduleDateTime = (schedule: ScheduleItem) =>
     new Date(`${schedule.schedule_date}T${schedule.start_time ?? "00:00"}`);
 
-  const isAttendanceOpen = (schedule: ScheduleItem) => getScheduleDateTime(schedule).getTime() > currentTime.getTime();
+  const getVoteDeadlineDateTime = (schedule: ScheduleItem) => new Date(schedule.vote_deadline);
+
+  const isAttendanceOpen = (schedule: ScheduleItem) =>
+    getVoteDeadlineDateTime(schedule).getTime() > currentTime.getTime();
 
   const getAttendanceWindowMessage = (schedule: ScheduleItem) =>
     isAttendanceOpen(schedule)
       ? i18n.language === "ja"
         ? "期限内のため、出欠は更新できます。"
-        : "Attendance can be updated until the schedule starts."
+        : "Attendance can be updated until the vote deadline."
       : i18n.language === "ja"
-        ? "制限期間を過ぎたため、出欠は変更できません。"
+        ? "出欠受付を終了したため、出欠は変更できません。"
         : "Attendance voting is closed for this schedule.";
-
   const getCategoryLabel = (categoryId: number) => categoryById[categoryId]?.category_name ?? t("unassigned");
   const getCategoryCode = (categoryId: number) => categoryById[categoryId]?.category_code ?? "practice";
 
@@ -436,6 +438,9 @@ export function PlayerWelcomePage() {
             </span>
             <h3 className="attendance-day-title">{schedule.schedule_date}</h3>
             <p className="summary-meta">{formatTimeRange(schedule)}</p>
+            <p className="summary-meta">
+              {t("voteDeadline")}: {getVoteDeadlineDateTime(schedule).toLocaleString(i18n.language === "ja" ? "ja-JP" : "en-US")}
+            </p>
             <p className="summary-meta">{schedule.description || "-"}</p>
             {locationMaster?.map_url ? (
               <a className="map-link" href={locationMaster.map_url ?? "#"} target="_blank" rel="noreferrer">
@@ -880,3 +885,6 @@ export function PlayerWelcomePage() {
     </main>
   );
 }
+
+
+

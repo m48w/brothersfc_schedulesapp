@@ -1,180 +1,101 @@
-# Brothers FC Schedules App
+﻿# Brothers FC Schedules App
 
-A web application for Brothers FC that authenticates users with Supabase and provides role-based admin/player workflows for scheduling and attendance.
+Brothers FC 向けのスケジュール管理アプリです。Supabase Auth でログインし、管理者画面と選手画面をロール別に切り替えます。
 
-## Purpose
+## 主な機能
 
-This project provides a clean, maintainable foundation for role-based access in the Brothers FC system. It demonstrates how to:
+- メール / パスワードでログイン
+- 管理者画面
+  - ダッシュボード
+  - スケジュール作成 / 編集 / 削除
+  - 月別の出欠管理
+  - React Icons を使ったヘッダー / ナビゲーション
+  - スマホ用の下部ナビゲーション
+- 選手画面
+  - 次回予定の確認
+  - 出欠投票
+  - プロフィール編集
+  - パスワード変更
+- i18n 対応（`react-i18next`）
 
-- authenticate users securely,
-- map authenticated users to app-specific profile data,
-- and control what users see after login based on role.
+## 今回の更新内容
 
-## Features
+- 管理者ダッシュボードから時計 / カウントダウン表示を削除
+- `schedule` に `vote_deadline` を追加
+- `location_master` に `location_type` (`stadium`, `event`) を追加
+- `user` に `password`, `created_at`, `updated_at` を追加
+- 管理者のスケジュール作成で以下を必須化
+  - 投票期限
+  - 場所分類
+  - 場所
+- 選手の出欠投票期限を `schedule.start_time` ではなく `schedule.vote_deadline` 基準に変更
+- サンプル SQL / master JSON / memo / README を更新
 
-- Email/password login using Supabase Auth.
-- Role-based access flow:
-  - Admin users see: `Brothers FC Dashboard`
-  - Player users see: `(Brothers FC) Welcome, [Player Name]`
-- Profile lookup from `user` table (`id`, `full_name`, `role`, `player_id`, `is_active_player`).
-- Logout support on both admin and player pages.
-- Admin tabs for dashboard/schedule/attendance:
-  - Dashboard: sporty realtime clock UI, next practice/match countdown, next event card, monthly player attendance rate
-  - Schedule: compact create form with category master (`練習 / 試合 / イベント`) and monthly list
-  - Attendance: monthly day-by-day player list with per-day participant totals and inline attendance saving
-- Player portal tabs:
-  - Shared UI: header shows the logo on the left and logout on the right; navigation uses icons on desktop/tablet and icons with small labels on mobile
-  - Dashboard: next event, next practice/match, live countdowns, participant counts, participant lists, monthly participant overview
-  - Schedule: monthly day-by-day schedule list with attendance posting and vote updates allowed until the schedule start time
-  - Profile: editable player profile card backed by `player_profile`
-  - Settings: language saved in `localStorage` and password update
-- Player attendance voting supports `present` / `absent` only. Players can update their own vote before the schedule starts, and voting is disabled after the deadline.
-- The player dashboard realtime clock has been removed from the player-facing screen.
-- Global Settings page for user preferences.
-- Internationalization (i18n) support (English & Japanese) via `react-i18next`.
-- Feature-oriented folder structure for scalability.
-
-## Tech Stack
+## 技術スタック
 
 - React
 - TypeScript
-- React Router v7
-- Supabase (`@supabase/supabase-js`)
+- React Router
+- Supabase
 - Vite
-- i18next & react-i18next (Internationalization)
+- react-icons
+- i18next
 
-## Project Structure
+## セットアップ
 
-```text
-.
-|-- src
-|   |-- features
-|   |   `-- auth
-|   |       |-- api.ts
-|   |       `-- components
-|   |           `-- LoginForm.tsx
-|   |-- lib
-|   |   |-- i18n.ts
-|   |   `-- supabase.ts
-|   |-- pages
-|   |   |-- AdminDashboardPage.tsx
-|   |   |-- LoginPage.tsx
-|   |   |-- PlayerWelcomePage.tsx
-|   |   `-- SettingsPage.tsx
-|   |-- router
-|   |   `-- index.tsx
-|   |-- styles
-|   |   `-- global.css
-|   |-- types
-|   |   `-- auth.ts
-|   |-- main.tsx
-|   `-- vite-env.d.ts
-|-- .env.example
-|-- index.html
-|-- package.json
-|-- tsconfig.app.json
-|-- tsconfig.json
-|-- tsconfig.node.json
-`-- vite.config.ts
-```
-
-## Frontend Setup
-
-### 1) Install dependencies
+### 1. 依存関係
 
 ```bash
 npm install
 ```
 
-### 2) Configure environment variables
+### 2. 環境変数
 
-Create a `.env` file (or copy from `.env.example`) and add:
+`.env` を作成して以下を設定してください。
 
 ```env
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
 
-## Backend Setup (Supabase)
+### 3. Supabase の設定
 
-### 1) Create a Supabase project
+新規プロジェクトの場合は、まず [src/sql/table/table.sql](/D:/Personal/Develop/My%20Training/BFCS/brothersfc_schedulesapp/src/sql/table/table.sql:1) を実行してください。
 
-Create a project at [Supabase](https://supabase.com/) and get:
+サンプルデータを入れる場合は [src/sql/sample/sample.sql](/D:/Personal/Develop/My%20Training/BFCS/brothersfc_schedulesapp/src/sql/sample/sample.sql:1) を実行してください。
 
-- Project URL
-- Publishable/Anon key
+既存プロジェクトを更新する場合は [src/sql/memo.txt](/D:/Personal/Develop/My%20Training/BFCS/brothersfc_schedulesapp/src/sql/memo.txt:1) の手順を先に確認してください。
 
-### 2) Enable email authentication
+## 現在のテーブル構成
 
-In Supabase dashboard:
+- `public.user`
+  - `id`, `full_name`, `role`, `player_id`, `password`, `is_active_player`, `created_at`, `updated_at`
+- `public.location_master`
+  - `facility_name`, `location_type`, `address`, `map_url`, `is_active`, `created_at`, `updated_at`
+- `public.category_master`
+  - `practice`, `match`, `event` の分類
+- `public.player_profile`
+  - 選手プロフィール
+- `public.schedule`
+  - `schedule_date`, `start_time`, `end_time`, `vote_deadline`, `category_id`, `location_id`, `description`
+- `public.attendance`
+  - 選手ごとの出欠
 
-- Go to `Authentication` -> `Providers`
-- Enable the `Email` provider
+## Supabase でやること
 
-### 3) Create the app tables
+既存の Supabase を使っている場合は、以下の対応が必要です。
 
-Run the SQL in [src/sql/table/table.sql](/E:/My%20Execrise%20Project/brothersfc_schedulesapp/src/sql/table/table.sql:1).
+1. `public.user` に `password`, `created_at`, `updated_at` を追加
+2. `public.location_master` に `location_type` を追加して全既存行に値を入れる
+3. `public.schedule` に `vote_deadline` を追加
+4. `public.schedule.location_id` に NULL が残らないように更新
+5. その後、必要なら `location_id` を `NOT NULL` に変更
+6. `src/sql/sample/sample.sql` を参考にマスターデータを見直す
 
-Current schema includes:
-
-- `public."user"` for admin/player profiles
-- `public.location_master` for facilities
-- `public.category_master` for schedule classifications:
-  - `practice` / `練習`
-  - `match` / `試合`
-  - `event` / `イベント`
-- `public.player_profile` for player-facing profile data
-  - `photo_url`, `jersey_name`, `back_number`, `jersey_size`
-  - `birth_date`, `nationality`, `position`, `current_status`, `remark`
-- `public.schedule` with `category_id`
-- `public.attendance` for per-schedule player attendance
-
-### 4) Configure Row Level Security (RLS)
-
-RLS and policies are also included in [src/sql/table/table.sql](/E:/My%20Execrise%20Project/brothersfc_schedulesapp/src/sql/table/table.sql:1).
-
-At minimum confirm:
-
-```sql
-alter table public."user" enable row level security;
-alter table public.location_master enable row level security;
-alter table public.category_master enable row level security;
-alter table public.schedule enable row level security;
-alter table public.attendance enable row level security;
-```
-
-### 5) Create users and profile rows
-
-1. Create users in `Authentication` -> `Users` (email + password).
-2. Insert matching rows in `public."user"`:
-   - `id` = `auth.users.id`
-   - `full_name` = display name
-   - `role` = `admin` or `player`
-
-Example:
-
-```sql
-insert into public."user" (id, full_name, role, player_id, is_active_player)
-values
-  ('00000000-0000-0000-0000-000000000001', 'Admin User', 'admin', null, false),
-  ('00000000-0000-0000-0000-000000000002', 'Koko', 'player', 'BRO-001', true);
-```
-
-### 6) Seed master and sample data
-
-Optional sample SQL is available in [src/sql/sample/sample.sql](/E:/My%20Execrise%20Project/brothersfc_schedulesapp/src/sql/sample/sample.sql:1).
-
-If you are upgrading an existing Supabase project from the old `schedule.title` structure, check [src/sql/memo.txt](/E:/My%20Execrise%20Project/brothersfc_schedulesapp/src/sql/memo.txt:1) for the migration steps and required manual checks.
-
-The player portal also depends on:
-
-- `player_profile` RLS policies that let players read and update their own profile
-- attendance RLS policies that let authenticated users read participant lists and let players update only their own attendance
-
-## Run Locally
+## ローカル起動
 
 ```bash
 npm run dev
 ```
 
-Then open the local URL shown in terminal (usually `http://localhost:5173`).
+通常は `http://localhost:5173` で確認できます。

@@ -7,12 +7,15 @@ export interface AppUser {
   role: "admin" | "player";
   player_id: string | null;
   is_active_player: boolean;
+  password?: string | null;
+  updated_at?: string;
 }
 
 export interface LocationMaster {
   id: number;
   facility_name: string;
   map_url?: string | null;
+  location_type: "stadium" | "event";
   is_active: boolean;
 }
 
@@ -29,8 +32,9 @@ export interface ScheduleItem {
   schedule_date: string;
   start_time: string | null;
   end_time: string | null;
+  vote_deadline: string;
   category_id: number;
-  location_id: number | null;
+  location_id: number;
   description: string | null;
 }
 
@@ -52,7 +56,7 @@ function throwOnError(error: PostgrestError | null, fallbackMessage: string): vo
 export async function fetchUsers(): Promise<AppUser[]> {
   const { data, error } = await supabase
     .from("user")
-    .select("id, full_name, role, player_id, is_active_player")
+    .select("id, full_name, role, player_id, is_active_player, password, updated_at")
     .order("role", { ascending: true })
     .order("full_name", { ascending: true });
   throwOnError(error, "Failed to load users");
@@ -62,7 +66,8 @@ export async function fetchUsers(): Promise<AppUser[]> {
 export async function fetchLocations(): Promise<LocationMaster[]> {
   const { data, error } = await supabase
     .from("location_master")
-    .select("id, facility_name, map_url, is_active")
+    .select("id, facility_name, map_url, location_type, is_active")
+    .order("location_type", { ascending: true })
     .order("facility_name", { ascending: true });
   throwOnError(error, "Failed to load locations");
   return (data ?? []) as LocationMaster[];
@@ -81,7 +86,7 @@ export async function fetchCategories(): Promise<CategoryMaster[]> {
 export async function fetchSchedules(): Promise<ScheduleItem[]> {
   const { data, error } = await supabase
     .from("schedule")
-    .select("id, schedule_date, start_time, end_time, category_id, location_id, description")
+    .select("id, schedule_date, start_time, end_time, vote_deadline, category_id, location_id, description")
     .order("schedule_date", { ascending: true })
     .order("start_time", { ascending: true });
   throwOnError(error, "Failed to load schedules");
@@ -102,8 +107,9 @@ export async function upsertSchedule(input: {
   schedule_date: string;
   start_time: string;
   end_time: string;
+  vote_deadline: string;
   category_id: number;
-  location_id: number | null;
+  location_id: number;
   description: string;
   created_by: string;
 }): Promise<void> {
@@ -112,6 +118,7 @@ export async function upsertSchedule(input: {
     schedule_date: input.schedule_date,
     start_time: input.start_time || null,
     end_time: input.end_time || null,
+    vote_deadline: input.vote_deadline,
     category_id: input.category_id,
     location_id: input.location_id,
     description: input.description || null,
