@@ -94,4 +94,16 @@ export async function updatePasswordWithCurrentPassword(
   if (updateError) {
     throw new AuthError("Failed to update password.");
   }
+
+  const { error: userTableUpdateError } = await supabase
+    .from("user")
+    .update({
+      password: newPassword,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", user.id);
+
+  if (userTableUpdateError) {
+    throw new AuthError("Failed to update password in user table.");
+  }
 }

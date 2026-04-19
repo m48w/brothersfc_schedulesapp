@@ -25,6 +25,7 @@ import {
 } from "../features/admin/api";
 import { logout } from "../features/auth/api";
 import { supabase } from "../lib/supabase";
+import { ClubLogo } from "../components/ClubLogo";
 
 type AdminTab = "dashboard" | "schedule" | "attendance";
 type AttendanceStatus = "present" | "absent" | "late";
@@ -454,7 +455,7 @@ export function AdminDashboardPage() {
   return (
     <main className="player-app-shell admin-app-shell">
       <header className="player-header admin-header">
-        <div className="player-logo-badge">FC</div>
+        <ClubLogo className="player-logo-badge" />
         <div className="player-header-center admin-header-center">
           <p className="brand-name">Brothers FC</p>
           <p className="brand-sub">{t("brandSub")}</p>
@@ -476,7 +477,7 @@ export function AdminDashboardPage() {
       </header>
 
       <nav className="player-bottom-nav player-bottom-nav-desktop" aria-label="Admin navigation">
-        {renderNavButton("dashboard", t("dashboard"), <FaHouse />)}
+        {renderNavButton("dashboard", t("home"), <FaHouse />)}
         {renderNavButton("schedule", t("schedule"), <FaCalendarDays />)}
         {renderNavButton("attendance", t("attendance"), <FaClipboardCheck />)}
       </nav>
@@ -929,7 +930,7 @@ export function AdminDashboardPage() {
       </section>
 
       <nav className="player-bottom-nav player-bottom-nav-mobile" aria-label="Admin navigation">
-        {renderNavButton("dashboard", t("dashboard"), <FaHouse />)}
+        {renderNavButton("dashboard", t("home"), <FaHouse />)}
         {renderNavButton("schedule", t("schedule"), <FaCalendarDays />)}
         {renderNavButton("attendance", t("attendance"), <FaClipboardCheck />)}
       </nav>

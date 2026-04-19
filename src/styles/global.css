@@ -145,13 +145,38 @@ h1, h2, h3, h4, h5, h6 {
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--field-green), var(--accent-primary));
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-heading);
   font-weight: 800;
   color: var(--text-dark);
+  overflow: hidden;
+  object-fit: cover;
+}
+
+.club-logo {
+  display: block;
+}
+
+.club-logo-fallback {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.16);
+}
+
+.login-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.login-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 10px;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.28);
 }
 
 .brand {
@@ -969,6 +994,7 @@ select.input option {
   justify-content: center;
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .player-nav-icon svg {
@@ -980,6 +1006,42 @@ select.input option {
 .player-nav-label {
   font-size: 0.82rem;
   line-height: 1.1;
+  display: inline;
+}
+
+.player-profile-view-card {
+  margin-top: 16px;
+}
+
+.player-profile-view-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.player-profile-view-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.player-profile-view-item span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.player-profile-view-item strong {
+  font-size: 1rem;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.player-profile-view-item-wide {
+  grid-column: 1 / -1;
 }
 
 /* Tables */
@@ -1167,6 +1229,9 @@ select.input option {
     display: inline;
     font-size: 0.68rem;
   }
+  .player-profile-view-grid {
+    grid-template-columns: 1fr;
+  }
   .player-schedule-header,
   .attendance-action-row,
   .player-profile-hero {
@@ -1183,8 +1248,3 @@ select.input option {
   }
 }
 
-@media (min-width: 641px) {
-  .player-nav-label {
-    display: none;
-  }
-}

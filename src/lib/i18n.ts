@@ -7,6 +7,7 @@ const resources = {
     translation: {
       brandName: "Brothers FC",
       brandSub: "Soccer Schedule Management",
+      home: "Home",
       dashboard: "Dashboard",
       schedule: "Schedule",
       attendance: "Attendance",
@@ -76,6 +77,8 @@ const resources = {
       passwordUpdated: "Password updated.",
       errorUpdatePassword: "Failed to update password.",
       photo: "Photo",
+      photoUrl: "Photo URL",
+      photoUpload: "Upload photo",
       fullName: "Full name",
       jerseyName: "Jersey name",
       backNumber: "Back number",
@@ -135,13 +138,16 @@ const resources = {
       errorSelectDateWithSchedule: "Select a date that has at least one schedule.",
       errorSaveAttendance: "Failed to save attendance.",
       playerAccessGranted: "Player access granted.",
-      back: "Back"
+      back: "Back",
+      viewMode: "View",
+      editMode: "Edit"
     }
   },
   ja: {
     translation: {
       brandName: "Brothers FC",
       brandSub: "サッカーのスケジュール管理",
+      home: "ホーム",
       dashboard: "ダッシュボード",
       schedule: "スケジュール",
       attendance: "出欠",
@@ -204,6 +210,8 @@ const resources = {
       passwordUpdated: "パスワードを更新しました。",
       errorUpdatePassword: "パスワードの更新に失敗しました",
       photo: "写真",
+      photoUrl: "写真URL",
+      photoUpload: "写真をアップロード",
       fullName: "氏名",
       jerseyName: "JerseyName",
       backNumber: "BackNumber",
@@ -262,7 +270,10 @@ const resources = {
       errorSelectDateWithSchedule: "スケジュールが1つ以上ある日付を選択してください。",
       errorSaveAttendance: "出欠の保存に失敗しました。",
       playerAccessGranted: "プレイヤーのアクセスが許可されました。",
-      back: "戻る"
+      back: "戻る",
+      profile: "プロフィール",
+      viewMode: "ビュー",
+      editMode: "編集"
     }
   }
 };

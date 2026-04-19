@@ -1,6 +1,8 @@
 ﻿import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { ChangeEvent } from "react";
+import { FaCalendarDays, FaEye, FaGear, FaHouse, FaPen, FaUser } from "react-icons/fa6";
 import {
   AppUser,
   AttendanceItem,
@@ -20,9 +22,11 @@ import {
   updatePasswordWithCurrentPassword
 } from "../features/auth/api";
 import { fetchPlayerProfile, PlayerProfileDetail, upsertPlayerProfile } from "../features/player/api";
+import { ClubLogo } from "../components/ClubLogo";
 
 type PlayerTab = "dashboard" | "schedule" | "profile" | "settings";
 type AttendanceStatus = "present" | "absent" | "late";
+type ProfileMode = "view" | "edit";
 
 interface PlayerLocationState {
   playerName?: string;
@@ -79,6 +83,7 @@ export function PlayerWelcomePage() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
+  const [profileMode, setProfileMode] = useState<ProfileMode>("view");
 
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
@@ -413,6 +418,20 @@ export function PlayerWelcomePage() {
     void i18n.changeLanguage(language);
   };
 
+  const handlePhotoUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const photoDataUrl = reader.result;
+      if (typeof photoDataUrl === "string") {
+        setProfileForm((prev) => ({ ...prev, photo_url: photoDataUrl }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (isLoadingProfile) {
     return (
       <main className="page-shell">
@@ -501,7 +520,7 @@ export function PlayerWelcomePage() {
   return (
     <main className="player-app-shell">
       <header className="player-header">
-        <div className="player-logo-badge">FC</div>
+        <ClubLogo className="player-logo-badge" />
         <div className="player-header-center">
           <p className="brand-name">Brothers FC</p>
           <p className="brand-sub">{playerName}</p>
@@ -518,11 +537,9 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("dashboard")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M4 13h7V4H4v9Zm9 7h7v-7h-7v7ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
-            </svg>
+            <FaHouse />
           </span>
-          <span className="player-nav-label">{t("dashboard")}</span>
+          <span className="player-nav-label">{t("home")}</span>
         </button>
         <button
           className={`player-nav-item ${activeTab === "schedule" ? "player-nav-item-active" : ""}`}
@@ -530,9 +547,7 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("schedule")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M7 2h2v2h6V2h2v2h3v18H4V4h3V2Zm11 8H6v10h12V10Zm0-4H6v2h12V6Z" />
-            </svg>
+            <FaCalendarDays />
           </span>
           <span className="player-nav-label">{t("schedule")}</span>
         </button>
@@ -542,9 +557,7 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("profile")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4Z" />
-            </svg>
+            <FaUser />
           </span>
           <span className="player-nav-label">{t("profile")}</span>
         </button>
@@ -554,9 +567,7 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("settings")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58-1.92-3.32-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54h-3.84l-.36 2.54c-.58.22-1.12.54-1.63.94l-2.39-.96-1.92 3.32 2.03 1.58a7.93 7.93 0 0 0 0 1.88l-2.03 1.58 1.92 3.32 2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54h3.84l.36-2.54c.58-.22 1.12-.54 1.63-.94l2.39.96 1.92-3.32-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
-            </svg>
+            <FaGear />
           </span>
           <span className="player-nav-label">{t("settings")}</span>
         </button>
@@ -655,121 +666,191 @@ export function PlayerWelcomePage() {
 
         {!loading && activeTab === "profile" ? (
           <section className="section">
-            <h2 className="section-title">{t("profile")}</h2>
-            <form className="form form-compact" onSubmit={handleProfileSubmit}>
-              <div className="player-profile-hero">
-                <div className="player-photo-frame">
-                  {profileForm.photo_url ? (
-                    <img className="player-photo" src={profileForm.photo_url} alt={playerName} />
-                  ) : (
-                    <div className="player-photo-placeholder">{playerName.slice(0, 1)}</div>
-                  )}
+            <div className="section-header">
+              <h2 className="section-title">{t("profile")}</h2>
+              <div className="inline-actions">
+                <button
+                  className={`button button-compact ${profileMode === "view" ? "" : "button-secondary"}`}
+                  type="button"
+                  onClick={() => setProfileMode("view")}
+                >
+                  <FaEye />
+                  <span>{t("viewMode")}</span>
+                </button>
+                <button
+                  className={`button button-compact ${profileMode === "edit" ? "" : "button-secondary"}`}
+                  type="button"
+                  onClick={() => setProfileMode("edit")}
+                >
+                  <FaPen />
+                  <span>{t("editMode")}</span>
+                </button>
+              </div>
+            </div>
+
+            {profileMode === "view" ? (
+              <div className="summary-card player-profile-view-card">
+                <div className="player-profile-hero">
+                  <div className="player-photo-frame">
+                    {profileForm.photo_url ? (
+                      <img className="player-photo" src={profileForm.photo_url} alt={playerName} />
+                    ) : (
+                      <div className="player-photo-placeholder">{playerName.slice(0, 1)}</div>
+                    )}
+                  </div>
+                  <div className="player-profile-identity">
+                    <h3 className="attendance-day-title">{playerName || "-"}</h3>
+                    <p className="summary-meta">
+                      {t("backNumber")}: {profileForm.back_number || "-"}
+                    </p>
+                    <p className="summary-meta">
+                      {t("age")}: {calculateAge(profileForm.birth_date)}
+                    </p>
+                  </div>
                 </div>
-                <div className="player-profile-identity">
-                  <h3 className="attendance-day-title">{playerName}</h3>
-                  <p className="summary-meta">
-                    {t("age")}: {calculateAge(profileForm.birth_date)}
-                  </p>
+
+                <div className="player-profile-view-grid">
+                  <div className="player-profile-view-item">
+                    <span>{t("fullName")}</span>
+                    <strong>{playerName || "-"}</strong>
+                  </div>
+                  <div className="player-profile-view-item">
+                    <span>{t("backNumber")}</span>
+                    <strong>{profileForm.back_number || "-"}</strong>
+                  </div>
+                  <div className="player-profile-view-item">
+                    <span>{t("age")}</span>
+                    <strong>{calculateAge(profileForm.birth_date)}</strong>
+                  </div>
+                  <div className="player-profile-view-item">
+                    <span>{t("birthDate")}</span>
+                    <strong>{profileForm.birth_date || "-"}</strong>
+                  </div>
+                  <div className="player-profile-view-item">
+                    <span>{t("position")}</span>
+                    <strong>{profileForm.position || "-"}</strong>
+                  </div>
+                  <div className="player-profile-view-item">
+                    <span>{t("nationality")}</span>
+                    <strong>{profileForm.nationality || "-"}</strong>
+                  </div>
+                  <div className="player-profile-view-item player-profile-view-item-wide">
+                    <span>{t("notes")}</span>
+                    <strong>{profileForm.remark || "-"}</strong>
+                  </div>
                 </div>
               </div>
+            ) : (
+              <form className="form form-compact" onSubmit={handleProfileSubmit}>
+                <div className="player-profile-hero">
+                  <div className="player-photo-frame">
+                    {profileForm.photo_url ? (
+                      <img className="player-photo" src={profileForm.photo_url} alt={playerName} />
+                    ) : (
+                      <div className="player-photo-placeholder">{playerName.slice(0, 1)}</div>
+                    )}
+                  </div>
+                  <div className="player-profile-identity">
+                    <h3 className="attendance-day-title">{playerName}</h3>
+                    <p className="summary-meta">
+                      {t("age")}: {calculateAge(profileForm.birth_date)}
+                    </p>
+                  </div>
+                </div>
 
-              <div className="form-grid">
-                <label className="label label-wide">
-                  {t("photo")}
-                  <input
-                    className="input input-compact"
-                    value={profileForm.photo_url}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, photo_url: event.target.value }))}
-                    placeholder="https://..."
-                  />
-                </label>
-                <label className="label">
-                  {t("fullName")}
-                  <input className="input input-compact" value={playerName} readOnly />
-                </label>
-                <label className="label">
-                  {t("jerseyName")}
-                  <input
-                    className="input input-compact"
-                    value={profileForm.jersey_name}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, jersey_name: event.target.value }))}
-                  />
-                </label>
-                <label className="label">
-                  {t("backNumber")}
-                  <input
-                    className="input input-compact"
-                    value={profileForm.back_number}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, back_number: event.target.value }))}
-                  />
-                </label>
-                <label className="label">
-                  {t("jerseySize")}
-                  <input
-                    className="input input-compact"
-                    value={profileForm.jersey_size}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, jersey_size: event.target.value }))}
-                  />
-                </label>
-                <label className="label">
-                  {t("birthDate")}
-                  <input
-                    className="input input-compact"
-                    type="date"
-                    value={profileForm.birth_date}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, birth_date: event.target.value }))}
-                  />
-                </label>
-                <label className="label">
-                  {t("age")}
-                  <input className="input input-compact" value={calculateAge(profileForm.birth_date)} readOnly />
-                </label>
-                <label className="label">
-                  {t("nationality")}
-                  <input
-                    className="input input-compact"
-                    value={profileForm.nationality}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, nationality: event.target.value }))}
-                  />
-                </label>
-                <label className="label">
-                  {t("position")}
-                  <input
-                    className="input input-compact"
-                    value={profileForm.position}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, position: event.target.value }))}
-                  />
-                </label>
-                <label className="label">
-                  {t("currentStatus")}
-                  <select
-                    className="input input-compact"
-                    value={String(profileForm.current_status)}
-                    onChange={(event) =>
-                      setProfileForm((prev) => ({
-                        ...prev,
-                        current_status: event.target.value === "true"
-                      }))
-                    }
-                  >
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                  </select>
-                </label>
-                <label className="label label-wide">
-                  {t("notes")}
-                  <textarea
-                    className="input input-compact textarea-compact"
-                    value={profileForm.remark}
-                    onChange={(event) => setProfileForm((prev) => ({ ...prev, remark: event.target.value }))}
-                  />
-                </label>
-              </div>
+                <div className="form-grid">
+                  <label className="label label-wide">
+                    {t("photoUpload")}
+                    <input className="input input-compact" type="file" accept="image/*" onChange={handlePhotoUpload} />
+                  </label>
+                  <label className="label">
+                    {t("fullName")}
+                    <input className="input input-compact" value={playerName} readOnly />
+                  </label>
+                  <label className="label">
+                    {t("jerseyName")}
+                    <input
+                      className="input input-compact"
+                      value={profileForm.jersey_name}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, jersey_name: event.target.value }))}
+                    />
+                  </label>
+                  <label className="label">
+                    {t("backNumber")}
+                    <input
+                      className="input input-compact"
+                      value={profileForm.back_number}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, back_number: event.target.value }))}
+                    />
+                  </label>
+                  <label className="label">
+                    {t("jerseySize")}
+                    <input
+                      className="input input-compact"
+                      value={profileForm.jersey_size}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, jersey_size: event.target.value }))}
+                    />
+                  </label>
+                  <label className="label">
+                    {t("birthDate")}
+                    <input
+                      className="input input-compact"
+                      type="date"
+                      value={profileForm.birth_date}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, birth_date: event.target.value }))}
+                    />
+                  </label>
+                  <label className="label">
+                    {t("age")}
+                    <input className="input input-compact" value={calculateAge(profileForm.birth_date)} readOnly />
+                  </label>
+                  <label className="label">
+                    {t("nationality")}
+                    <input
+                      className="input input-compact"
+                      value={profileForm.nationality}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, nationality: event.target.value }))}
+                    />
+                  </label>
+                  <label className="label">
+                    {t("position")}
+                    <input
+                      className="input input-compact"
+                      value={profileForm.position}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, position: event.target.value }))}
+                    />
+                  </label>
+                  <label className="label">
+                    {t("currentStatus")}
+                    <select
+                      className="input input-compact"
+                      value={String(profileForm.current_status)}
+                      onChange={(event) =>
+                        setProfileForm((prev) => ({
+                          ...prev,
+                          current_status: event.target.value === "true"
+                        }))
+                      }
+                    >
+                      <option value="true">true</option>
+                      <option value="false">false</option>
+                    </select>
+                  </label>
+                  <label className="label label-wide">
+                    {t("notes")}
+                    <textarea
+                      className="input input-compact textarea-compact"
+                      value={profileForm.remark}
+                      onChange={(event) => setProfileForm((prev) => ({ ...prev, remark: event.target.value }))}
+                    />
+                  </label>
+                </div>
 
-              <button className="button button-compact" type="submit" disabled={isSavingProfile}>
-                {isSavingProfile ? t("saving") : t("saveProfile")}
-              </button>
-            </form>
+                <button className="button button-compact" type="submit" disabled={isSavingProfile}>
+                  {isSavingProfile ? t("saving") : t("saveProfile")}
+                </button>
+              </form>
+            )}
           </section>
         ) : null}
 
@@ -839,11 +920,9 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("dashboard")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M4 13h7V4H4v9Zm9 7h7v-7h-7v7ZM4 20h7v-5H4v5Zm9-9h7V4h-7v7Z" />
-            </svg>
+            <FaHouse />
           </span>
-          <span className="player-nav-label">{t("dashboard")}</span>
+          <span className="player-nav-label">{t("home")}</span>
         </button>
         <button
           className={`player-nav-item ${activeTab === "schedule" ? "player-nav-item-active" : ""}`}
@@ -851,9 +930,7 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("schedule")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M7 2h2v2h6V2h2v2h3v18H4V4h3V2Zm11 8H6v10h12V10Zm0-4H6v2h12V6Z" />
-            </svg>
+            <FaCalendarDays />
           </span>
           <span className="player-nav-label">{t("schedule")}</span>
         </button>
@@ -863,9 +940,7 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("profile")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 1.79-8 4v2h16v-2c0-2.21-3.58-4-8-4Z" />
-            </svg>
+            <FaUser />
           </span>
           <span className="player-nav-label">{t("profile")}</span>
         </button>
@@ -875,9 +950,7 @@ export function PlayerWelcomePage() {
           onClick={() => setActiveTab("settings")}
         >
           <span className="player-nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58-1.92-3.32-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54h-3.84l-.36 2.54c-.58.22-1.12.54-1.63.94l-2.39-.96-1.92 3.32 2.03 1.58a7.93 7.93 0 0 0 0 1.88l-2.03 1.58 1.92 3.32 2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54h3.84l.36-2.54c.58-.22 1.12-.54 1.63-.94l2.39.96 1.92-3.32-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
-            </svg>
+            <FaGear />
           </span>
           <span className="player-nav-label">{t("settings")}</span>
         </button>

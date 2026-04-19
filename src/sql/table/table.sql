@@ -110,6 +110,13 @@ for select
 to authenticated
 using (true);
 
+create policy "Users can update own password"
+on public."user"
+for update
+to authenticated
+using (auth.uid() = id)
+with check (auth.uid() = id);
+
 create policy "Authenticated users can read locations"
 on public.location_master
 for select

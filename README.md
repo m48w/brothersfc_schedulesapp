@@ -6,40 +6,41 @@ Brothers FC 向けのスケジュール管理アプリです。Supabase Auth で
 
 - メール / パスワードでログイン
 - 管理者画面
-  - ダッシュボード
-  - スケジュール作成 / 編集 / 削除
+  - ダッシュボード（次回の練習・試合 / イベント、月別出席率）
+  - スケジュール作成 / 編集 / 削除（投票期限・場所種別・場所を必須）
   - 月別の出欠管理
-  - React Icons を使ったヘッダー / ナビゲーション
+  - 設定画面へのリンク、React Icons のナビゲーション
   - スマホ用の下部ナビゲーション
 - 選手画面
-  - 次回予定の確認
-  - 出欠投票
-  - プロフィール編集
-  - パスワード変更
-- i18n 対応（`react-i18next`）
+  - 次回予定・ライブカウントダウン、月間スケジュール一覧
+  - 出欠投票（`vote_deadline` まで更新可）
+  - プロフィールの閲覧 / 編集、写真アップロードまたは URL
+  - 言語切替（日本語 / 英語）、パスワード変更
+- i18n 対応（`react-i18next`、ブラウザ言語検出 + `localStorage`）
 
-## 今回の更新内容
+## 最近の更新内容
 
 - 管理者ダッシュボードから時計 / カウントダウン表示を削除
 - `schedule` に `vote_deadline` を追加
 - `location_master` に `location_type` (`stadium`, `event`) を追加
 - `user` に `password`, `created_at`, `updated_at` を追加
+- 共通クラブロゴ（`ClubLogo`）は [`src/logo/brothersfc.svg`](src/logo/brothersfc.svg) を Vite でバンドルして表示（読み込み失敗時は `FC` フォールバック）
 - 管理者のスケジュール作成で以下を必須化
   - 投票期限
   - 場所分類
   - 場所
 - 選手の出欠投票期限を `schedule.start_time` ではなく `schedule.vote_deadline` 基準に変更
-- サンプル SQL / master JSON / memo / README を更新
+- サンプル SQL / [`src/sql/sample/master.json`](src/sql/sample/master.json) / memo / README を更新
 
 ## 技術スタック
 
-- React
+- React 18
 - TypeScript
-- React Router
-- Supabase
-- Vite
+- React Router 7
+- Supabase（`@supabase/supabase-js`）
+- Vite 5
 - react-icons
-- i18next
+- i18next / react-i18next
 
 ## セットアップ
 
@@ -60,11 +61,15 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 
 ### 3. Supabase の設定
 
-新規プロジェクトの場合は、まず [src/sql/table/table.sql](/D:/Personal/Develop/My%20Training/BFCS/brothersfc_schedulesapp/src/sql/table/table.sql:1) を実行してください。
+新規プロジェクトの場合は、まず [`src/sql/table/table.sql`](src/sql/table/table.sql) を実行してください。
 
-サンプルデータを入れる場合は [src/sql/sample/sample.sql](/D:/Personal/Develop/My%20Training/BFCS/brothersfc_schedulesapp/src/sql/sample/sample.sql:1) を実行してください。
+サンプルデータを入れる場合は [`src/sql/sample/sample.sql`](src/sql/sample/sample.sql) を実行してください。マスタ系の参照用 JSON は [`src/sql/sample/master.json`](src/sql/sample/master.json) です。
 
-既存プロジェクトを更新する場合は [src/sql/memo.txt](/D:/Personal/Develop/My%20Training/BFCS/brothersfc_schedulesapp/src/sql/memo.txt:1) の手順を先に確認してください。
+既存プロジェクトを更新する場合は [`src/sql/memo.txt`](src/sql/memo.txt) の手順を先に確認してください。
+
+### 4. クラブロゴ
+
+ヘッダーのロゴは [`src/components/ClubLogo.tsx`](src/components/ClubLogo.tsx) が [`src/logo/brothersfc.svg`](src/logo/brothersfc.svg) を参照します。差し替える場合は同パスの SVG を置き換えるか、コンポーネントの import を変更してください。画像の読み込みに失敗した場合は `FC` のフォールバックが表示されます。
 
 ## 現在のテーブル構成
 
@@ -99,3 +104,12 @@ npm run dev
 ```
 
 通常は `http://localhost:5173` で確認できます。
+
+## ビルド
+
+```bash
+npm run build
+npm run preview
+```
+
+`build` は TypeScript のプロジェクト参照ビルド（`tsc -b`）のあと Vite で本番バンドルを生成します。
