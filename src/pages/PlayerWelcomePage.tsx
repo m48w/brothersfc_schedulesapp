@@ -442,59 +442,104 @@ export function PlayerWelcomePage() {
     );
   }
 
-  const renderScheduleCard = (schedule: ScheduleItem, showActions: boolean) => {
+  const formatCompactDate = (date: string) => {
+    const parsed = new Date(`${date}T00:00:00`);
+    return parsed.toLocaleDateString(i18n.language === "ja" ? "ja-JP" : "en-US", {
+      month: "short",
+      day: "numeric",
+      weekday: "short"
+    });
+  };
+
+  const renderScheduleCard = (schedule: ScheduleItem, variant: "dashboard" | "schedule") => {
     const participants = getParticipants(schedule.id);
     const myAttendance = attendanceByScheduleAndUser[`${schedule.id}:${playerUserId}`];
     const locationMaster = schedule.location_id ? locationById[schedule.location_id] : null;
     const attendanceOpen = isAttendanceOpen(schedule);
+    const isScheduleView = variant === "schedule";
 
     return (
-      <article className="player-schedule-card" key={schedule.id}>
+      <article
+        className={`player-schedule-card ${isScheduleView ? "player-schedule-card-compact" : "player-schedule-card-detailed"}`}
+        key={schedule.id}
+      >
         <div className="player-schedule-header">
-          <div>
+          {isScheduleView ? (
+            <div className="player-schedule-date-badge">
+              <strong>{formatCompactDate(schedule.schedule_date)}</strong>
+              <span>{formatTimeRange(schedule)}</span>
+            </div>
+          ) : null}
+          <div className="player-schedule-main">
             <span className={`category-pill category-pill-${getCategoryCode(schedule.category_id)}`}>
               {getCategoryLabel(schedule.category_id)}
             </span>
-            <h3 className="attendance-day-title">{schedule.schedule_date}</h3>
-            <p className="summary-meta">{formatTimeRange(schedule)}</p>
-            <p className="summary-meta">
-              {t("voteDeadline")}: {getVoteDeadlineDateTime(schedule).toLocaleString(i18n.language === "ja" ? "ja-JP" : "en-US")}
-            </p>
-            <p className="summary-meta">{schedule.description || "-"}</p>
-            {locationMaster?.map_url ? (
-              <a className="map-link" href={locationMaster.map_url ?? "#"} target="_blank" rel="noreferrer">
-                {locationMaster.facility_name}
-              </a>
-            ) : locationMaster ? (
-              <p className="summary-meta">{locationMaster.facility_name}</p>
+            <h3 className="attendance-day-title">{isScheduleView ? getCategoryLabel(schedule.category_id) : schedule.schedule_date}</h3>
+            {isScheduleView ? (
+              <>
+                <div className="player-schedule-meta-grid">
+                  <span className="player-schedule-meta-chip">{schedule.schedule_date}</span>
+                  <span className="player-schedule-meta-chip">{formatTimeRange(schedule)}</span>
+                  <span className="player-schedule-meta-chip">
+                    {locationMaster?.facility_name ?? t("noLocation")}
+                  </span>
+                </div>
+                <p className="summary-meta">
+                  {t("voteDeadline")}:{" "}
+                  {getVoteDeadlineDateTime(schedule).toLocaleString(i18n.language === "ja" ? "ja-JP" : "en-US")}
+                </p>
+                {schedule.description ? <p className="player-schedule-description">{schedule.description}</p> : null}
+                {locationMaster?.map_url ? (
+                  <a className="map-link" href={locationMaster.map_url ?? "#"} target="_blank" rel="noreferrer">
+                    {locationMaster.facility_name}
+                  </a>
+                ) : null}
+              </>
             ) : (
-              <p className="summary-meta">{t("noLocation")}</p>
+              <>
+                <p className="summary-meta">{formatTimeRange(schedule)}</p>
+                <p className="summary-meta">
+                  {t("voteDeadline")}:{" "}
+                  {getVoteDeadlineDateTime(schedule).toLocaleString(i18n.language === "ja" ? "ja-JP" : "en-US")}
+                </p>
+                <p className="summary-meta">{schedule.description || "-"}</p>
+                {locationMaster?.map_url ? (
+                  <a className="map-link" href={locationMaster.map_url ?? "#"} target="_blank" rel="noreferrer">
+                    {locationMaster.facility_name}
+                  </a>
+                ) : locationMaster ? (
+                  <p className="summary-meta">{locationMaster.facility_name}</p>
+                ) : (
+                  <p className="summary-meta">{t("noLocation")}</p>
+                )}
+              </>
             )}
           </div>
-          <div className="attendance-count-box">
-            <span>{t("participantsTotal")}</span>
-            <strong>{participants.length}</strong>
+          {!isScheduleView ? (
+            <div className="attendance-count-box">
+              <span>{t("participantsTotal")}</span>
+              <strong>{participants.length}</strong>
+            </div>
+          ) : null}
+        </div>
+
+        {!isScheduleView ? (
+          <div className="participant-block">
+            <p className="participant-title">{t("participantsList")}</p>
+            {participants.length > 0 ? (
+              <ul className="name-list">
+                {participants.map((name) => (
+                  <li key={`${schedule.id}-${name}`}>{name}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="subtitle">{t("noParticipants")}</p>
+            )}
           </div>
-        </div>
+        ) : null}
 
-        <div className="participant-block">
-          <p className="participant-title">{t("participantsList")}</p>
-          {participants.length > 0 ? (
-            <ul className="name-list">
-              {participants.map((name) => (
-                <li key={`${schedule.id}-${name}`}>{name}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="subtitle">{t("noParticipants")}</p>
-          )}
-        </div>
-
-        {showActions ? (
-          <div className="attendance-action-row">
-            <span className={`attendance-status-chip ${attendanceOpen ? "attendance-status-chip-open" : "attendance-status-chip-closed"}`}>
-              {t("yourAttendanceStatus")}: {myAttendance ? t(myAttendance.status) : t("notAnswered")}
-            </span>
+        {isScheduleView ? (
+          <div className="attendance-action-row attendance-action-row-compact">
             <span className={`attendance-window-note ${attendanceOpen ? "attendance-window-note-open" : "attendance-window-note-closed"}`}>
               {getAttendanceWindowMessage(schedule)}
             </span>
@@ -512,7 +557,16 @@ export function PlayerWelcomePage() {
               ))}
             </div>
           </div>
-        ) : null}
+        ) : (
+          <div className="attendance-action-row">
+            <span className={`attendance-status-chip ${attendanceOpen ? "attendance-status-chip-open" : "attendance-status-chip-closed"}`}>
+              {t("yourAttendanceStatus")}: {myAttendance ? t(myAttendance.status) : t("notAnswered")}
+            </span>
+            <span className={`attendance-window-note ${attendanceOpen ? "attendance-window-note-open" : "attendance-window-note-closed"}`}>
+              {getAttendanceWindowMessage(schedule)}
+            </span>
+          </div>
+        )}
       </article>
     );
   };
@@ -592,7 +646,7 @@ export function PlayerWelcomePage() {
             </div>
 
             <h2 className="section-title">{t("nextEventSection")}</h2>
-            {nextEvent ? renderScheduleCard(nextEvent, false) : <p className="subtitle">{t("noUpcomingEvent")}</p>}
+            {nextEvent ? renderScheduleCard(nextEvent, "dashboard") : <p className="subtitle">{t("noUpcomingEvent")}</p>}
 
             <div className="section-header section-header-spaced">
               <h2 className="section-title">{t("nextScheduleSection")}</h2>
@@ -600,7 +654,7 @@ export function PlayerWelcomePage() {
             {nextPracticeOrMatch ? (
               <>
                 <p className="live-countdown-text">{formatCountdown(getScheduleDateTime(nextPracticeOrMatch))}</p>
-                {renderScheduleCard(nextPracticeOrMatch, false)}
+                {renderScheduleCard(nextPracticeOrMatch, "dashboard")}
               </>
             ) : (
               <p className="subtitle">{t("noUpcomingSchedule")}</p>
@@ -626,7 +680,7 @@ export function PlayerWelcomePage() {
 
             <div className="attendance-day-list">
               {monthlyDashboardSchedules.length > 0 ? (
-                monthlyDashboardSchedules.map((schedule) => renderScheduleCard(schedule, false))
+                monthlyDashboardSchedules.map((schedule) => renderScheduleCard(schedule, "dashboard"))
               ) : (
                 <p className="subtitle">{t("noSchedules")}</p>
               )}
@@ -636,7 +690,7 @@ export function PlayerWelcomePage() {
 
         {!loading && activeTab === "schedule" ? (
           <section className="section">
-            <div className="section-header">
+            <div className="section-header section-header-spaced">
               <h2 className="section-title">{t("playerMonthlyScheduleList")}</h2>
               {scheduleMonths.length > 0 ? (
                 <div className="month-switcher">
@@ -653,10 +707,15 @@ export function PlayerWelcomePage() {
                 </div>
               ) : null}
             </div>
+            <p className="player-schedule-screen-intro">
+              {i18n.language === "ja"
+                ? "見やすさを優先して、日付・時間・場所と回答操作だけをまとめて表示しています。"
+                : "This view focuses on date, time, location, and quick attendance actions."}
+            </p>
 
-            <div className="attendance-day-list">
+            <div className="attendance-day-list player-schedule-list-compact">
               {monthlyScheduleList.length > 0 ? (
-                monthlyScheduleList.map((schedule) => renderScheduleCard(schedule, true))
+                monthlyScheduleList.map((schedule) => renderScheduleCard(schedule, "schedule"))
               ) : (
                 <p className="subtitle">{t("noSchedules")}</p>
               )}
