@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ChangeEvent } from "react";
@@ -543,19 +543,37 @@ export function PlayerWelcomePage() {
             <span className={`attendance-window-note ${attendanceOpen ? "attendance-window-note-open" : "attendance-window-note-closed"}`}>
               {getAttendanceWindowMessage(schedule)}
             </span>
-            <div className="inline-actions">
-              {ATTENDANCE_OPEN_STATUSES.map((status) => (
-                <button
-                  key={`${schedule.id}-${status}`}
-                  className={`button button-compact ${status === "absent" ? "button-secondary" : ""}`}
-                  type="button"
-                  disabled={!attendanceOpen || savingAttendanceScheduleId === schedule.id}
-                  onClick={() => void handleAttendanceSubmit(schedule.id, schedule.schedule_date, status)}
-                >
-                  {status === "present" ? t("join") : t("absent")}
-                </button>
-              ))}
-            </div>
+            {attendanceOpen ? (
+              <div className="inline-actions">
+                {ATTENDANCE_OPEN_STATUSES.map((status) => {
+                  const isSelected = myAttendance?.status === status;
+                  const isUnanswered = !myAttendance;
+                  
+                  let btnClass = "button button-compact";
+                  if (isSelected) {
+                    // keep primary style for the selected option
+                  } else if (isUnanswered) {
+                    // default style if no vote yet
+                    if (status === "absent") btnClass += " button-secondary";
+                  } else {
+                    // dim non-selected options
+                    btnClass += " button-secondary";
+                  }
+
+                  return (
+                    <button
+                      key={`${schedule.id}-${status}`}
+                      className={btnClass}
+                      type="button"
+                      disabled={savingAttendanceScheduleId === schedule.id}
+                      onClick={() => void handleAttendanceSubmit(schedule.id, schedule.schedule_date, status)}
+                    >
+                      {status === "present" ? t("join") : t("absent")}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="attendance-action-row">

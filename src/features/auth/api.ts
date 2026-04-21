@@ -95,15 +95,21 @@ export async function updatePasswordWithCurrentPassword(
     throw new AuthError("Failed to update password.");
   }
 
-  const { error: userTableUpdateError } = await supabase
+  // Update the password in the public.user table as well
+  const { data, error: userTableUpdateError } = await supabase
     .from("user")
     .update({
       password: newPassword,
       updated_at: new Date().toISOString()
     })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select();
 
   if (userTableUpdateError) {
-    throw new AuthError("Failed to update password in user table.");
+    throw new AuthError("Failed to update password in user table. " + userTableUpdateError.message);
+  }
+
+  if (!data || data.length === 0) {
+    throw new AuthError("Failed to reflect password update in the user table. RLS update policy might be missing.");
   }
 }

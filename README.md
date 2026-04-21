@@ -20,6 +20,8 @@ Brothers FC 向けのスケジュール管理アプリです。Supabase Auth で
 
 ## 最近の更新内容
 
+- パスワード同期の信頼性向上: パスワード変更時に `public.user` テーブルへも同期される処理を追加し、RLSポリシー不足による更新漏れを検知・エラー表示するよう改善。
+- 出欠投票ボタンのUI改善: 選手画面にて、投票期限超過後はボタンを非表示にし、期間内は現在の回答状況に合わせてボタンの背景スタイル（アクティブ・非アクティブ）を動的に切り替えるよう変更。
 - 選手画面のスケジュール一覧のデザインを改善・最適化（コンパクト/詳細ビューの対応、日付フォーマット、モバイル向けレスポンシブなカードレイアウトの適用など）
 - 管理者ダッシュボードから時計 / カウントダウン表示を削除
 - `schedule` に `vote_deadline` を追加
@@ -91,7 +93,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 
 既存の Supabase を使っている場合は、以下の対応が必要です。
 
-1. `public.user` に `password`, `created_at`, `updated_at` を追加
+1. `public.user` に `password`, `created_at`, `updated_at` を追加。同時に **パスワード更新用（UPDATE）の RLS ポリシー (`using(auth.uid()=id)` など) も追加**。
 2. `public.location_master` に `location_type` を追加して全既存行に値を入れる
 3. `public.schedule` に `vote_deadline` を追加
 4. `public.schedule.location_id` に NULL が残らないように更新
