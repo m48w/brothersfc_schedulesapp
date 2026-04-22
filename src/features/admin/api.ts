@@ -21,7 +21,7 @@ export interface LocationMaster {
 
 export interface CategoryMaster {
   id: number;
-  category_code: "practice" | "match" | "event";
+  category_code: "training" | "match" | "event";
   category_name: string;
   is_active: boolean;
   display_order: number;

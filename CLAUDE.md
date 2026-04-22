@@ -79,7 +79,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
 - `public.location_master`
   - `facility_name`, `location_type`, `address`, `map_url`, `is_active`, `created_at`, `updated_at`
 - `public.category_master`
-  - `practice`, `match`, `event` の分類
+  - `training`, `match`, `event` の分類
 - `public.player_profile`
   - 選手プロフィール
 - `public.schedule`

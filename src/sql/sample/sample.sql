@@ -12,10 +12,10 @@ set full_name = excluded.full_name,
 
 insert into public.location_master (id, facility_name, location_type, address, map_url, phone_number, email, remark, is_active)
 values
-  (1, 'FUT MESSE Tsurumi', 'stadium', 'Osaka, Tsurumi-ku', 'https://maps.app.goo.gl/NqkHCcY8b1jLJoDj8', '', '', '', true),
-  (2, 'FUT MESSE Kaizuka', 'stadium', 'Osaka, Kaizuka', 'https://maps.app.goo.gl/NVQVzj8tZWhow6HW9', '', '', '', true),
-  (3, 'Club House Meeting Room', 'event', 'Osaka, Club House', 'https://maps.app.goo.gl/9fDsUwXfZFKM7KeV8', '', '', '', true),
-  (4, 'Sponsor Event Hall', 'event', 'Osaka, Event Hall', 'https://maps.app.goo.gl/ECF8uyEGTrqQJxAJ9', '', '', '', true)
+  (1, 'FUT MESSE 海老江', 'stadium', '〒553-0001 大阪府大阪市福島区海老江８丁目１６', 'https://maps.app.goo.gl/NqkHCcY8b1jLJoDj8', '', '', '', true),
+  (2, 'FUT MESSE鶴見緑地', 'stadium', '〒538-0035 大阪府大阪市鶴見区緑地公園', 'https://maps.app.goo.gl/NVQVzj8tZWhow6HW9', '', '', '', true),
+  (3, '鳥飼下地区 フットサル場', 'stadium', '〒566-0071 大阪府摂津市鳥飼下', 'https://maps.app.goo.gl/ECF8uyEGTrqQJxAJ9', '', '', '', true),
+  (4, '八尾市立南木の本防災体育館', 'stadium', '〒581-0042 大阪府八尾市南木の本３丁目１−９', 'https://maps.app.goo.gl/ECF8uyEGTrqQJxAJ9', '', '', '', true)
 on conflict (id) do update
 set facility_name = excluded.facility_name,
     location_type = excluded.location_type,
@@ -29,7 +29,7 @@ set facility_name = excluded.facility_name,
 
 insert into public.category_master (id, category_code, category_name, display_order, is_active)
 values
-  (1, 'practice', 'Practice', 1, true),
+  (1, 'training', 'Training', 1, true),
   (2, 'match', 'Match', 2, true),
   (3, 'event', 'Event', 3, true)
 on conflict (id) do update

@@ -249,7 +249,7 @@ export function AdminDashboardPage() {
     return (
       schedules.find((item) => {
         const categoryCode = categoryById[item.category_id]?.category_code;
-        if (categoryCode !== "practice" && categoryCode !== "match") {
+        if (categoryCode !== "training" && categoryCode !== "match") {
           return false;
         }
         return new Date(`${item.schedule_date}T${item.start_time ?? "00:00"}`).getTime() >= now;
@@ -432,7 +432,7 @@ export function AdminDashboardPage() {
   };
 
   const getCategoryCode = (categoryId: number) => {
-    return categoryById[categoryId]?.category_code ?? "practice";
+    return categoryById[categoryId]?.category_code ?? "training";
   };
 
   const getLocationTypeLabel = (locationType: LocationType) => {

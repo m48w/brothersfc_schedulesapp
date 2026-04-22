@@ -267,7 +267,7 @@ export function PlayerWelcomePage() {
     () =>
       schedules.find((schedule) => {
         const code = categoryById[schedule.category_id]?.category_code;
-        if (code !== "practice" && code !== "match") return false;
+        if (code !== "training" && code !== "match") return false;
         return (
           new Date(`${schedule.schedule_date}T${schedule.start_time ?? "00:00"}`).getTime() >=
           currentTime.getTime()
@@ -303,7 +303,7 @@ export function PlayerWelcomePage() {
         ? "出欠受付を終了したため、出欠は変更できません。"
         : "Attendance voting is closed for this schedule.";
   const getCategoryLabel = (categoryId: number) => categoryById[categoryId]?.category_name ?? t("unassigned");
-  const getCategoryCode = (categoryId: number) => categoryById[categoryId]?.category_code ?? "practice";
+  const getCategoryCode = (categoryId: number) => categoryById[categoryId]?.category_code ?? "training";
 
   const formatMonthLabel = (month: string) => {
     const monthDate = new Date(`${month}-01T00:00:00`);
@@ -548,7 +548,7 @@ export function PlayerWelcomePage() {
                 {ATTENDANCE_OPEN_STATUSES.map((status) => {
                   const isSelected = myAttendance?.status === status;
                   const isUnanswered = !myAttendance;
-                  
+
                   let btnClass = "button button-compact";
                   if (isSelected) {
                     // keep primary style for the selected option
